@@ -1,5 +1,5 @@
 parameters.setup <-
-function(sudriv, with.names=FALSE, settings = "settings.json",
+function(sudriv, with.names=FALSE, settings = "settings.json", replace.param=FALSE,
                             ...){
     options(list(stringsAsFactors = FALSE))
     if(class(settings) == "character"){
@@ -43,7 +43,7 @@ function(sudriv, with.names=FALSE, settings = "settings.json",
 
     ## ==========================
     ## add parameters to model object:
-    sudriv$model$parameters <- parameters
+    if(replace.param | is.null(sudriv$model$parameters))    sudriv$model$parameters <- parameters
     sudriv$model$par.units  <- units
     sudriv$model$par.time   <- par.time
     return(sudriv)
