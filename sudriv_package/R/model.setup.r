@@ -48,7 +48,7 @@ function(sudriv, settings = "settings.json",writeO=TRUE,f.path.hru=NA,f.path.tra
     model$run.model <- run.model
     model$run.engine <- run.engine
     model$args   <- args
-    model$par.fit.psbl <- info[["parFit"]]
+    ##model$par.fit.psbl <- info[["parFit"]]
     if(is.null(sudriv$model$par.fit)){
         model$par.fit <- info[["parFit"]]
     }else{

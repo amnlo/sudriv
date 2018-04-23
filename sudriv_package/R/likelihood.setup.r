@@ -19,6 +19,14 @@ function(sudriv, settings = "settings.json", replace.param=FALSE,
 
     lb <- par_likeli[,"lb"]
     ub <- par_likeli[,"ub"]
+    units <- par_likeli[,"units"]
+    ## create vector that contains info about whether and how parameters are time-related
+    time <- grepl("t", units)
+    per.time <- grepl("/t", units)
+    time[per.time] <- FALSE
+    par.time <- rep(0, nrow(par_likeli))
+    par.time[time] <- 1
+    par.time[per.time] <- -1 # 0=not time-related, 1=..t, -1=../t
 
     ## ==========================
     ## update sudriv object:
@@ -29,5 +37,7 @@ function(sudriv, settings = "settings.json", replace.param=FALSE,
     sudriv$likelihood$lb     <- lb
     sudriv$likelihood$ub     <- ub
     sudriv$likelihood$tran   <- tran
+    sudriv$likelihood$par.units   <- units
+    sudriv$likelihood$par.time<- par.time
     return(sudriv)
 }

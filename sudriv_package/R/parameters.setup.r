@@ -20,7 +20,17 @@ function(sudriv, with.names=FALSE, settings = "settings.json",
             parameters <- sudriv.readpars(parfile=paste(settings$dir.input, "/", settings$file.par, sep=""))
         }
     }
+    ## use parameter names
     parnames <- read.table("parnames.txt", sep=",")
+    units    <- sub("^\\s+", "", parnames[,2]) #trim leading whitespace and save units
+    ## create vector that contains info about whether and how parameters are time-related
+    time <- grepl("t", units)
+    per.time <- grepl("/t", units)
+    time[per.time] <- FALSE
+    par.time <- rep(0, nrow(parnames))
+    par.time[time] <- 1
+    par.time[per.time] <- -1 # 0=not time-related, 1=..t, -1=../t
+
     parnames <- sub("^\\s+", "", parnames[,1]) #trim leading whitespace
     if(with.names){
         if(any(names(parameters) != parnames)){
@@ -34,5 +44,7 @@ function(sudriv, with.names=FALSE, settings = "settings.json",
     ## ==========================
     ## add parameters to model object:
     sudriv$model$parameters <- parameters
+    sudriv$model$par.units  <- units
+    sudriv$model$par.time   <- par.time
     return(sudriv)
 }
