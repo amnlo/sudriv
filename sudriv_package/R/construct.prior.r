@@ -1,14 +1,14 @@
 ## This function defines some distributions
 
-construct.prior <- function(su, file=NA){
+construct.prior <- function(sudriv, file=NA){
 
     distdef.model <- list()
-    for(p in 1:length(su$model$parameters)){
-        distdef.model[[names(su$model$parameters)[p]]] <- c("uniform", su$model$args$parLo[p], su$model$args$parHi[p])
+    for(p in 1:length(sudriv$model$parameters)){
+        distdef.model[[names(sudriv$model$parameters)[p]]] <- c("uniform", sudriv$model$args$parLo[p], sudriv$model$args$parHi[p])
     }
     distdef.likeli <- list()
-    for(p in 1:length(su$likelihood$parameters)){
-        distdef.likeli[[names(su$likelihood$parameters)[p]]] <- c("uniform", su$likelihood$lb[p], su$likelihood$ub[p])
+    for(p in 1:length(sudriv$likelihood$parameters)){
+        distdef.likeli[[names(sudriv$likelihood$parameters)[p]]] <- c("uniform", sudriv$likelihood$lb[p], sudriv$likelihood$ub[p])
     }
 
     if(!is.na(file)){
@@ -18,9 +18,9 @@ construct.prior <- function(su, file=NA){
         for(p.curr in 1:nrow(distdef)){
             def.curr <- distdef[p.curr,2:ncol(distdef)]
             def.curr <- def.curr[!is.na(def.curr)]
-            if(distdef[p.curr,"Parameter"] %in% names(su$model$parameters)){
+            if(distdef[p.curr,"Parameter"] %in% names(sudriv$model$parameters)){
                 distdef.model[[distdef[p.curr, "Parameter"]]] <- def.curr
-            }else if(distdef[p.curr,"Parameter"] %in% names(su$likelihood$parameters)){
+            }else if(distdef[p.curr,"Parameter"] %in% names(sudriv$likelihood$parameters)){
                 distdef.likeli[[distdef[p.curr, "Parameter"]]] <- def.curr
             }else{
                 stop(paste("parameter", distdef[p.curr,"Parameter"], "not found"))
@@ -29,8 +29,8 @@ construct.prior <- function(su, file=NA){
     }
 
 
-    su <- prior.model.setup(su, dist="indep", distdef=distdef.model)
-    su <- prior.likeli.setup(su, dist="indep", distdef=distdef.likeli)
+    sudriv <- prior.model.setup(sudriv, dist="indep", distdef=distdef.model)
+    sudriv <- prior.likeli.setup(sudriv, dist="indep", distdef=distdef.likeli)
 
-    return(su)
+    return(sudriv)
 }

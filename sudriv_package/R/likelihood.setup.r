@@ -8,7 +8,21 @@ function(sudriv, settings = "settings.json", replace.param=FALSE,
         stop("Argument 'settings' needs to be a character specifying the settings file or a list containig the settings.")
     }
 
-    par_likeli <- read.table(paste(settings$dir.input, "/par_likeli.txt", sep=""), header=TRUE)
+    par_likeli <- read.table(paste(settings$dir.input, "/plik_", settings$subcatchment, settings$tracer, "_", settings$par.likeli.tag, ".txt", sep=""), header=TRUE)
+    # if layout has more variables than par_likeli, repeat the values of par_likeli for all variables
+    n.var.layout <- length(unique(sudriv$layout$layout$var))
+    n.var.pars   <- length(unique(par_likeli$var[!grepl("GLOB_", par_likeli$var)]))
+    if(n.var.pars < n.var.layout){
+        warning("layout contains more variables than likelihood parameter file. Repeating those for all varialbes ...")
+        if(n.var.layout %% n.var.pars !=0) stop("variables in layout not a multiple of variables in parameter file")
+        par_likeli_long <- par_likeli
+        for(i in 2:(n.var.layout/n.var.pars)){
+            pars.curr <- par_likeli[!grepl("GLOB_", par_likeli$var),]
+            pars.curr$var <- unique(sudriv$layout$layout$var)[i]
+            par_likeli_long <- rbind(par_likeli_long, pars.curr)
+        }
+        par_likeli <- par_likeli_long
+    }
     fit        <- as.numeric(par_likeli[,"fit"])
 
     par_likeli[,"fit"] <- NULL
