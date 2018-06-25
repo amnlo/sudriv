@@ -1,6 +1,6 @@
 ## This function defines some distributions
 
-construct.prior <- function(sudriv, file=NA){
+construct.prior <- function(sudriv, file=NA, rep.var=FALSE){
 
     distdef.model <- list()
     for(p in 1:length(sudriv$model$parameters)){
@@ -15,6 +15,17 @@ construct.prior <- function(sudriv, file=NA){
         distdef <- read.table(file=file, sep="")
         colnames(distdef) <- distdef[1,]
         distdef <- distdef[-1,]
+        ## n.var.layout <- length(unique(sudriv$layout$layout$var))
+        ## ## repeat distribution definitions for different variables if necessary
+        ## if(rep.var & n.var.layout > 1){
+        ##     warning("layout contains more variables than likelihood parameter file. Repeating those for all varialbes ...")
+        ##     ## repeat each prior distribution definition for all the variables
+        ##     for(p.curr in names(sudriv$model$prior$distdef)){
+        ##         mygrepl <- function(x,pat,...){grepl(pat,x,...)}
+        ##         lapply(mygrepl, )
+        ##         if((grepl("Glo", p.curr)))
+        ##     }
+        ## }
         for(p.curr in 1:nrow(distdef)){
             def.curr <- distdef[p.curr,2:ncol(distdef)]
             def.curr <- def.curr[!is.na(def.curr)]

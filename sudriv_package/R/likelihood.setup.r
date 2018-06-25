@@ -8,21 +8,25 @@ function(sudriv, settings = "settings.json", replace.param=FALSE,
         stop("Argument 'settings' needs to be a character specifying the settings file or a list containig the settings.")
     }
 
-    par_likeli <- read.table(paste(settings$dir.input, "/plik_", settings$subcatchment, settings$tracer, "_", settings$par.likeli.tag, ".txt", sep=""), header=TRUE)
-    # if layout has more variables than par_likeli, repeat the values of par_likeli for all variables
-    n.var.layout <- length(unique(sudriv$layout$layout$var))
-    n.var.pars   <- length(unique(par_likeli$var[!grepl("GLOB_", par_likeli$var)]))
-    if(n.var.pars < n.var.layout){
-        warning("layout contains more variables than likelihood parameter file. Repeating those for all varialbes ...")
-        if(n.var.layout %% n.var.pars !=0) stop("variables in layout not a multiple of variables in parameter file")
-        par_likeli_long <- par_likeli
-        for(i in 2:(n.var.layout/n.var.pars)){
-            pars.curr <- par_likeli[!grepl("GLOB_", par_likeli$var),]
-            pars.curr$var <- unique(sudriv$layout$layout$var)[i]
-            par_likeli_long <- rbind(par_likeli_long, pars.curr)
+    par_likeli <- read.table(paste(settings$dir.input, "/", settings$file.par.lik, sep=""), header=TRUE)
+    # if layout has more variables than par_likeli, take the values for the first variable and repeat them for all the others:
+    var.layout <- unique(sudriv$layout$layout$var)
+    var.pars   <- unique(par_likeli$var[!grepl("GLOB_", par_likeli$var)])
+    warning("layout contains more variables than likelihood parameter file. Repeating those for all varialbes ...")
+    first.var <- subset(par_likeli, var=="C1Wv_Qstream") # select par likeli of first variable (hard coded)
+    par_likeli_long <- do.call("rbind", replicate(length(var.layout), first.var, simplify=FALSE))
+    par_likeli_long$var <- rep(var.layout, each=nrow(first.var))
+    ## use additional likelihood parameters of other variables, if specified:
+    if(length(var.pars) > 1){
+        other.entries <- subset(par_likeli, var!="C1Wv_Qstream" & !grepl("GLOB", var))
+        for(z in 1:nrow(other.entries)){
+            slot.replace <- par_likeli_long[,"var"]==other.entries[z,"var"] & par_likeli_long[,"par"]==other.entries[z,"par"]
+            if(sum(slot.replace)==0) stop("variable or parameter in likelihood parameter file not found")
+            par_likeli_long[slot.replace,] <- other.entries[z,]
         }
-        par_likeli <- par_likeli_long
     }
+    ## add global multipliers again:
+    par_likeli <- rbind(subset(par_likeli, grepl("GLOB_", var)), par_likeli_long)
     fit        <- as.numeric(par_likeli[,"fit"])
 
     par_likeli[,"fit"] <- NULL
