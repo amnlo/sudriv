@@ -30,9 +30,9 @@ sudriv.readpars.withnames <- function(parfile, skip=6){
     l <- 1
     while(length(oneLine <- readLines(con, n=1, warn=FALSE)) > 0){
         if(i > skip){
-            if(!is.na(as.numeric(oneLine))){
+            if(!is.na(suppressWarnings(as.numeric(oneLine)))){
                 if(length(grep("---", oneLine))==0){
-                    pars[[l]] <- as.numeric(oneLine)
+                    pars[[l]] <- suppressWarnings(as.numeric(oneLine))
                     l = l + 1
                 }
             }else{
@@ -41,7 +41,7 @@ sudriv.readpars.withnames <- function(parfile, skip=6){
                     splt <- strsplit(nospace, "\\s")
                     num <- splt[[1]][1]
                     nme <- splt[[1]][2]
-                    pars[[l]] <- as.numeric(num[1])
+                    pars[[l]] <- suppressWarnings(as.numeric(num[1]))
                     nmes[[l]] <- as.character(nme[1])
                     l = l + 1
                 }
@@ -63,16 +63,16 @@ sudriv.readpars <- function(parfile, skip=6){
     l <- 1
     while(length(oneLine <- readLines(con, n=1, warn=FALSE)) > 0){
         if(i > skip){
-            if(!is.na(as.numeric(oneLine))){
+            if(!is.na(suppressWarnings(as.numeric(oneLine)))){
                 if(length(grep("---", oneLine))==0){
-                    pars[[l]] <- as.numeric(oneLine)
+                    pars[[l]] <- as.numeric(suppressWarnings(oneLine))
                     l = l + 1
                 }
             }else{
                 nospace <- sub("^\\s+", "", oneLine) #trim leading whitespace
                 num <- strsplit(nospace, "\\s")[[1]]
                 if(length(num)>=2){
-                    pars[[l]] <- as.numeric(num[1])
+                    pars[[l]] <- as.numeric(suppressWarnings(num[1]))
                     l = l + 1
                 }
             }
