@@ -34,8 +34,8 @@ function(sudriv, with.names=FALSE, settings = "settings.json", replace.param=FAL
     parnames <- sub("^\\s+", "", parnames[,1]) #trim leading whitespace
     if(with.names){
         if(any(names(parameters) != parnames)){
-            print(names(parameters))
-            print(parnames)
+            print(names(parameters)[which(names(parameters) != parnames)])
+            print(parnames[which(names(parameters) != parnames)])
             stop("different parameters / -names expected")
         }
     }

@@ -12,9 +12,9 @@ construct.prior <- function(sudriv, file=NA, rep.var=FALSE){
     }
 
     if(!is.na(file)){
-        distdef <- read.table(file=file, sep="")
-        colnames(distdef) <- distdef[1,]
-        distdef <- distdef[-1,]
+        distdef <- read.table(file=file, sep="", header=TRUE)
+        ## colnames(distdef) <- distdef[1,]
+        ## distdef <- distdef[-1,]
         ## n.var.layout <- length(unique(sudriv$layout$layout$var))
         ## ## repeat distribution definitions for different variables if necessary
         ## if(rep.var & n.var.layout > 1){

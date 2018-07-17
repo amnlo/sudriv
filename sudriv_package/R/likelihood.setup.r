@@ -12,7 +12,6 @@ function(sudriv, settings = "settings.json", replace.param=FALSE,
     # if layout has more variables than par_likeli, take the values for the first variable and repeat them for all the others:
     var.layout <- unique(sudriv$layout$layout$var)
     var.pars   <- unique(par_likeli$var[!grepl("GLOB_", par_likeli$var)])
-    warning("layout contains more variables than likelihood parameter file. Repeating those for all varialbes ...")
     first.var <- subset(par_likeli, var=="C1Wv_Qstream") # select par likeli of first variable (hard coded)
     par_likeli_long <- do.call("rbind", replicate(length(var.layout), first.var, simplify=FALSE))
     par_likeli_long$var <- rep(var.layout, each=nrow(first.var))

@@ -28,7 +28,7 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, variables
     catch.hru <- rep("Contrib. of HRUs (l/s)", nrow(y.dat))
     catch.hru[grep("C[0-9]+", y.dat$var)] <- "St. 4, Streamflow (l/s)"
     catch.hru <- factor(catch.hru, levels=c("St. 4, Streamflow (l/s)", "Contrib. of HRUs (l/s)"))
-    var.ext <- y.dat$var
+    var.ext <- as.character(y.dat$var)
     var.ext[y.dat$modobs == "obs"] <- paste(var.ext[y.dat$modobs=="obs"], ".obs", sep="")
     y.dat <- cbind(y.dat, catch.hru, var.ext)
     y.dat     <- y.dat[y.dat$var %in% variables,]
