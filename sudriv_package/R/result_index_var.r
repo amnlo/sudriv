@@ -10,7 +10,8 @@ result_index_var<- function(res.sup, file.o, variables){
     outnames <- gsub("%", "_", outnames)
     outnames <- gsub("\\[", "", outnames)
     outnames <- gsub("\\]", "", outnames)
-    target <- list()
+    target <- rep(list(nme=c(0,0)), length(variables))
+    names(target) <- variables
     for(n.curr in variables){
         ind.outn <- which(outnames == n.curr)
         if(length(ind.outn)>1) stop(paste(n.curr, " occurs multiple times in result", sep = ""))
