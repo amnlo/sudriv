@@ -9,8 +9,8 @@ result2layout <- function(res.sup, ind.var, layout, meas.point.val=FALSE, lump=T
     ## This is the vector of outputs considering the lumped measurements; it can be compared to the observations
     y.out <- vector("numeric", length=nrow(L))
     if(meas.point.val){
-            dt <- res.sup[["time"]][2]-res.sup[["time"]][1]
-            res.time.ext <- c(res.sup[["time"]][1]-0.999*dt, c(rbind(res.sup[["time"]], res.sup[["time"]]+0.001*dt)))
+        dt <- res.sup[["time"]][2]-res.sup[["time"]][1]
+        res.time.ext <- c(res.sup[["time"]][1]-0.999*dt, c(rbind(res.sup[["time"]], res.sup[["time"]]+0.001*dt)))
     }
     for(var.curr in names(ind.var)){
         ind.L <- L[,1]==var.curr
