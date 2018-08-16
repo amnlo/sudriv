@@ -8,8 +8,8 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, variables
     }
     scales <- scales[1]
     ##translate.var <- c("C1Tc1_Qstream", "C1Tc2_Qstream", "C2Tc1_Qstream", "C2Tc2_Qstream", "C3Tc1_Qstream", "C3Tc2_Qstream", "C4Tc1_Qstream", "C4Tc2_Qstream", "C5Tc1_Qstream", "C5Tc2_Qstream")
-    translate.var <- c("C1Tc1_Qstream", "C1Tc2_Qstream", "C2Tc1_Qstream", "C2Tc2_Qstream", "C3Tc1_Qstream", "C3Tc2_Qstream", "C4Tc1_Qstream", "C4Tc2_Qstream", "C5Tc1_Qstream", "C5Tc2_Qstream")
-    translate.to <- c("C1Tc1", "C1Tc2", "C2Tc1", "C2Tc2", "C3Tc1", "C3Tc2", "C4Tc1", "C4Tc2", "C5Tc1", "C5Tc2")
+    translate.var <- c("C1Wv_Qstream", "C2Wv_Qstream", "C3Wv_Qstream", "C4Wv_Qstream", "C5Wv_Qstream", "C1Tc1_Qstream", "C1Tc2_Qstream", "C2Tc1_Qstream", "C2Tc2_Qstream", "C3Tc1_Qstream", "C3Tc2_Qstream", "C4Tc1_Qstream", "C4Tc2_Qstream", "C5Tc1_Qstream", "C5Tc2_Qstream")
+    translate.to <- c("C1Wv", "C2Wv", "C3Wv", "C4Wv", "C5Wv", "C1Tc1", "C1Tc2", "C2Tc1", "C2Tc2", "C3Tc1", "C3Tc2", "C4Tc1", "C4Tc2", "C5Tc1", "C5Tc2")
     ##translate.to <- c(expression("St. 2, Atraz."~(mu*g/l)), expression("St. 2, Terb."~(mu*g/l)), expression("St. 4, Atraz."~(mu*g/l)), expression("St. 4, Terb."~(mu*g/l)))
     ##translate.to  <- c(expression(Atraz.~(mu*g/l)), expression(Terb.~(mu*g/l)), expression(Discharge~(l/s)), expression("P"~"(mm/15min)"))
     if(is.na(c(hru.areas)[1]) & !per.area) stop("hru.areas required if per.area is FALSE")
