@@ -103,6 +103,23 @@ calcpdf <- function(x,distpar,log=FALSE)
       return(ifelse(x<0,NA,-log(mean)-x/mean))   
     }
   }
+  if ( distpar[1] == "ExponentialTrunc" | distpar[1] == "exponentialtrunc" )
+  {
+    # truncated exponential distribution; parameters are mean, min and max;
+    mean    <- as.numeric(distpar[2])
+    min     <- as.numeric(distpar[3])
+    max     <- as.numeric(distpar[4])
+    fact <- 1/(pexp(q=max,rate=1/mean)-pexp(q=min,rate=1/mean))
+    if ( !log )
+    {
+      return(ifelse(x<min|x>max,0,fact*dexp(x,rate=1/mean)))
+    }
+    else
+    {
+      return(ifelse(x<min|x>max,NA,
+                    log(fact)+dexp(x,rate=1/mean,log=TRUE)))
+    }
+  }    
   stop(paste("Distribution",dist,"not yet implemented"))
 }
 
