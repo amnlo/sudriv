@@ -1,4 +1,4 @@
-regularize.layout <- function(sudriv, threshold=50000, max.dt=0.5, min.dt=0.2){
+regularize.layout <- function(sudriv, threshold=50000, max.dt=0.5, min.dt=0.2, remove=NA){
     ## ATTENTION, this function cannot properly deal with su$layout$calib. It just assigns calibration to all the regularized layout sections and assumes that there is no prediction.
     vars <- as.character(unique(sudriv$layout$layout$var))
     layout.new <- list()
@@ -51,6 +51,6 @@ regularize.layout <- function(sudriv, threshold=50000, max.dt=0.5, min.dt=0.2){
     sudriv$layout$layout <- layout.new
     sudriv$observations <- obs.new
     sudriv$layout$lump <- as.factor(lump.new)
-    sudriv$layout$calib <- calib.new
+    sudriv$layout$calib <- calib.new[!(calib.new %in% remove)]## ATTENTION this only works if calib does not contain NAs
     return(sudriv)
 }
