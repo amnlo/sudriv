@@ -12,6 +12,12 @@ function(sudriv, settings = "settings.json",writeO=TRUE,f.path.hru=NA,f.path.tra
     ## Load DLL. Needs 'path.to.dll'
     dyn.load(settings$path.to.dll)
     info      <- prepare_dll(settings$modelID, writeO=writeO)
+    outnames <- as.character(read.table("outnames.txt")[,1])
+    outnames <- gsub("%", "_", outnames)
+    outnames <- gsub("\\[", "", outnames)
+    outnames <- gsub("\\]", "", outnames)
+    parnames <- as.character(read.table("parnames.txt")[,1])
+    parnames <- gsub(",", "", parnames)
     ##    run.engine <- get(settings$name.runengine.dll)
     parLo <- ifelse(as.logical(info[["parTran"]]), log(info[["parLo"]]), info[["parLo"]])
     parHi <- ifelse(as.logical(info[["parTran"]]), log(info[["parHi"]]), info[["parHi"]])
@@ -53,6 +59,16 @@ function(sudriv, settings = "settings.json",writeO=TRUE,f.path.hru=NA,f.path.tra
         model$par.fit <- info[["parFit"]]
     }else{
         model$par.fit <- sudriv$model$par.fit
+    }
+    if(is.null(sudriv$model$outnames)){
+        model$outnames <- outnames
+    }else{
+        model$outnames <- sudriv$model$outnames
+    }
+    if(is.null(sudriv$model$parnames)){
+        model$parnames <- parnames
+    }else{
+        model$parnames <- sudriv$model$parnames
     }
     model$parameters <- sudriv$model$parameters ## inherit existing model parameters (if present)
     model$prior      <- sudriv$model$prior      ## inherit existing prior for model parameters (if present)

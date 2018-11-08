@@ -4,12 +4,14 @@
 #' @param file.o Character name of file where output names of Superflex are stored
 #' @param layout The layout for which the output should be extracted.
 #' @return A list of n vectors, where n is equal to the number of different varialbes in 'layout'. The first number of the vector is the first index of that variable in \code{res.sup} and the second is the last index in \code{res.sup}
-result_index_var<- function(res.sup, file.o, variables){
+result_index_var<- function(res.sup, file.o, variables, outnames=NULL){
+    if(is.null(outnames)){
+        outnames <- as.character(read.table(file.o)[,1])
+        outnames <- gsub("%", "_", outnames)
+        outnames <- gsub("\\[", "", outnames)
+        outnames <- gsub("\\]", "", outnames)
+    }
     n <- length(res.sup$time)
-    outnames <- as.character(read.table(file.o)[,1])
-    outnames <- gsub("%", "_", outnames)
-    outnames <- gsub("\\[", "", outnames)
-    outnames <- gsub("\\]", "", outnames)
     target <- rep(list(nme=c(0,0)), length(variables))
     names(target) <- variables
     for(n.curr in variables){

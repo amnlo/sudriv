@@ -9,7 +9,7 @@ prepare.plot.layout <- function(sudriv, var.obs, var.mod=c()){
     l.mod$var <- rep(var.mod, each = nq)
     su.plot$layout$layout <- rbind(su.plot$layout$layout, l.mod)
     res.sup <- run.engine(su.plot)
-    ind.var <- result_index_var(res.sup=res.sup, file.o="outnames.txt", variables=c(var.obs,var.mod))
+    ind.var <- result_index_var(res.sup=res.sup, file.o="outnames.txt", variables=c(var.obs,var.mod), outnames=sudriv$model$outnames)
     ## prepare layout for output times of model
     l.out <- data.frame(var=rep(c(var.obs, var.mod), each=nrow(sudriv$input$inputobs)), time=rep(sudriv$input$inputobs[,1], length(c(var.obs, var.mod))))
     y.mod   <- result2layout(res.sup=res.sup, ind.var=ind.var, layout=list(layout=l.out, lump=NA), lump=FALSE)$original
