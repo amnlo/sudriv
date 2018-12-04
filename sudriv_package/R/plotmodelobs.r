@@ -91,7 +91,7 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, variables
             plot(ggplot.obj)
         }else{
             width = 10
-            height = 6
+            height = 3*length(variables)
             nchar = length(unlist(strsplit(file, split = NULL)))
             pat = substr(file, nchar-2, nchar)
             if(pat == "pdf"){

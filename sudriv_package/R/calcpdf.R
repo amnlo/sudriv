@@ -20,6 +20,24 @@ calcpdf <- function(x,distpar,log=FALSE)
     max <- as.numeric(distpar[3])
     return(dunif(x,min=min,max=max,log=log))
   }
+  if ( distpar[1] == "Unilog" | distpar[1] == "unilog" )
+  {
+    lb <- as.numeric(distpar[2])
+    ub <- as.numeric(distpar[3])
+    if(length(x)>1){
+        low <- x < exp(lb)
+        high <- x > exp(ub)
+        result <- numeric(length=length(x))
+        result[low] <- 0
+        result[high] <- 0
+        result[!low & !high] <- (1/x[!low & !high]) / (ub - lb)
+        return(result)
+    }else{
+        if(x < exp(lb)) return(0)
+        if(x > exp(ub)) return(0)
+        if(x >= exp(lb) & x <=exp(ub)) return((1/x) / (ub - lb))
+    }
+  }
   if ( distpar[1] == "Normal" | distpar[1] == "normal" )
   {
     # normal distribution; parameters are mean and sd:
@@ -83,11 +101,11 @@ calcpdf <- function(x,distpar,log=FALSE)
     max <- as.numeric(distpar[3])
     if ( !log )
     {
-      return(ifelse(x<min|x>max,0,1/(log(max/min)*x)))   
+      return(ifelse(x<min|x>max,0,1/(log(max/min)*x)))
     }
     else
     {
-      return(ifelse(x<min|x>max,NA,-log(log(max/min)) - log(x)))   
+      return(ifelse(x<min|x>max,NA,-log(log(max/min)) - log(x)))
     }
   }
   if ( distpar[1] == "Exponential" | distpar[1] == "exponential" )
@@ -96,11 +114,11 @@ calcpdf <- function(x,distpar,log=FALSE)
     mean <- as.numeric(distpar[2])
     if ( !log )
     {
-      return(ifelse(x<0,0,1/mean*exp(-x/mean)))   
+      return(ifelse(x<0,0,1/mean*exp(-x/mean)))
     }
     else
     {
-      return(ifelse(x<0,NA,-log(mean)-x/mean))   
+      return(ifelse(x<0,NA,-log(mean)-x/mean))
     }
   }
   if ( distpar[1] == "ExponentialTrunc" | distpar[1] == "exponentialtrunc" )
@@ -119,7 +137,7 @@ calcpdf <- function(x,distpar,log=FALSE)
       return(ifelse(x<min|x>max,NA,
                     log(fact)+dexp(x,rate=1/mean,log=TRUE)))
     }
-  }    
+  }
   stop(paste("Distribution",dist,"not yet implemented"))
 }
 
