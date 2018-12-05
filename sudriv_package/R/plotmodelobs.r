@@ -1,6 +1,6 @@
 ## This script contains functions to plot the model results and compare them to the observations
 
-plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, variables=NA, extend.to=NA, plot=TRUE, file=NA, scales=c("free","fixed","free_x","free_y"), xlim=NULL, ylim=NULL, per.area=TRUE, hru.areas=NA){
+plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list(), variables=NA, extend.to=NA, plot=TRUE, file=NA, scales=c("free","fixed","free_x","free_y"), xlim=NULL, ylim=NULL, per.area=TRUE, hru.areas=NA){
     library(scales)
     gg_color_hue <- function(n) {
         hues = seq(15, 375, length = n + 1)
@@ -15,7 +15,7 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, variables
     if(is.na(c(hru.areas)[1]) & !per.area) stop("hru.areas required if per.area is FALSE")
     if(all(is.na(variables))) variables <- unique(c(as.character(layout.mod[,1]), as.character(layout.obs[,1])))
     if(all(is.na(y.obs))){
-        y.dat <- cbind(layout.mod, data.frame(y = as.numeric(y.mod), modobs = rep("mod", nrow(layout.mod))))
+        y.dat <- cbind(layout.mod, data.frame(y = as.numeric(y.mod), modobs = paste0("mod", layout.mod$vary)))
     }else{
         if(is.null(layout.obs)){
             layout.obs <- layout.mod
@@ -23,7 +23,7 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, variables
         }else{
             if(length(y.obs) != nrow(layout.obs)) stop("'layout.obs' and 'y.obs' have different length")
         }
-        y.dat <- cbind(rbind(layout.mod,layout.obs), data.frame(y = c(as.numeric(y.mod),as.numeric(y.obs)), modobs = c(rep("mod",nrow(layout.mod)), rep("obs", nrow(layout.obs)))))
+        y.dat <- cbind(rbind(layout.mod[,c("var","time")],layout.obs), data.frame(y = c(as.numeric(y.mod),as.numeric(y.obs)), modobs = c(paste0("mod",layout.mod$vary), rep("obs", nrow(layout.obs)))))
     }
     catch.hru <- rep("Contrib. of HRUs (l/s)", nrow(y.dat))
     catch.hru[grep("C[0-9]+", y.dat$var)] <- "St. 4, Streamflow (l/s)"
@@ -32,6 +32,13 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, variables
     var.ext[y.dat$modobs == "obs"] <- paste(var.ext[y.dat$modobs=="obs"], ".obs", sep="")
     y.dat <- cbind(y.dat, catch.hru, var.ext)
     y.dat     <- y.dat[y.dat$var %in% variables,]
+    if(length(vary)>0){## ATTENTION: this function can only deal with vary of length zero or one (i.e. when one parameter is changed at a time).
+        options("scipen"=-100, "digits"=5)
+        for(i in 0:length(unique(y.dat$modobs))){
+            y.dat$modobs <- gsub(paste0("mod",i), paste(letters[i+1],signif(vary[[1]][i+1],3)), y.dat$modobs)
+        }
+        options("scipen"=0, "digits"=7)
+    }
     ## Translate variable names for plotting
     y.dat$var <- as.factor(y.dat$var)
     y.dat$vartrans <- y.dat$var
@@ -65,13 +72,12 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, variables
     ## Convert days in y.dat into time for plotting purposes
     strt <- as.POSIXct("2008-01-01")
     y.dat$time <- strt + as.numeric(y.dat$time * 60*60*24)
-    print(head(y.dat$time))
-    print(tail(y.dat$time))
     ## limit the data plotted to the specified region
     if(!is.null(xlim)) y.dat <- subset(y.dat, time >= xlim[1] & time <= xlim[2])
-    ggplot.obj <- ggplot(y.dat, aes(x=time, y=y, group=modobs, shape=modobs, col=modobs)) + scale_x_datetime(limits=xlim) + scale_y_continuous(limits=ylim)
-    ggplot.obj <- ggplot.obj + geom_point(data=subset(y.dat, modobs=="obs" & var!="P"), size=1.8) + geom_line(data=subset(y.dat, modobs=="mod" & var!="P"), size=1.2)+ theme_bw(base_size=20) + theme(legend.position="none", axis.text.x=element_text(size=20)) + geom_col(data=subset(y.dat, var=="P"))
-    ggplot.obj <- ggplot.obj + labs(x="", y="") + facet_wrap(~vartrans, nrow=length(variables), scales=scales, labeller=label_parsed, strip.position="left")
+    ggplot.obj <- ggplot(y.dat, aes(x=time, y=y, shape=modobs, col=modobs)) + scale_x_datetime(limits=xlim) + scale_y_continuous(limits=ylim)
+    ggplot.obj <- ggplot.obj + geom_point(data=subset(y.dat, modobs=="obs" & var!="P"), size=1.8) + geom_line(data=subset(y.dat, modobs!="obs" & var!="P"), size=1.2)+ theme_bw(base_size=20) + theme(title=element_text(size=14), axis.text.x=element_text(size=20))
+    if("P" %in% y.dat$var) ggplot.obj <- ggplot.obj + geom_col(data=subset(y.dat, var=="P"))
+    ggplot.obj <- ggplot.obj + labs(x="", y="", shape="", col="", title=names(vary)[1]) + facet_wrap(~vartrans, nrow=length(variables), scales=scales, labeller=label_parsed, strip.position="left")
     ## ggplot.obj <- ggplot() + scale_x_datetime(limits=xlim, labels=date_format("%d.%m %H:%M")) + scale_y_continuous(limits=ylim)
     ## ggplot.obj <- ggplot.obj + geom_line(aes(x=time, y=y, group=var.ext, col=var.ext, linetype=var.ext), data=y.dat, size=1.8)+ theme_bw(base_size=26) + theme(axis.text.x=element_text(size=16))## + theme(legend.position="none")
     ## cols2 <- gg_color_hue(2)

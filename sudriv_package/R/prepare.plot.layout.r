@@ -1,4 +1,4 @@
-prepare.plot.layout <- function(sudriv, var.obs, var.mod=c()){
+prepare.plot.layout <- function(sudriv, var.obs, var.mod=c(), vary=list()){
     ## This function prepares the layout of the observed and modelled variables (var.obs) and the modelled variables (var.mod)
     precip=FALSE
     if("P" %in% var.obs){var.obs <- var.obs[var.obs != "P"]; precip=TRUE}
@@ -12,11 +12,28 @@ prepare.plot.layout <- function(sudriv, var.obs, var.mod=c()){
     ind.var <- result_index_var(res.sup=res.sup, file.o="outnames.txt", variables=c(var.obs,var.mod), outnames=sudriv$model$outnames)
     ## prepare layout for output times of model
     l.out <- data.frame(var=rep(c(var.obs, var.mod), each=nrow(sudriv$input$inputobs)), time=rep(sudriv$input$inputobs[,1], length(c(var.obs, var.mod))))
-    y.mod   <- result2layout(res.sup=res.sup, ind.var=ind.var, layout=list(layout=l.out, lump=NA), lump=FALSE)$original
+    l.out.multi <- data.frame(var=rep(c(var.obs, var.mod), each=nrow(sudriv$input$inputobs), times=1+length(unlist(vary))), time=rep(sudriv$input$inputobs[,1], times=length(c(var.obs,var.mod))*(1+length(unlist(vary)))))
+    l.out.multi$vary <- rep(0:length(unlist(vary)), each=nrow(l.out))
+    y.mod.multi <- rep(NA, nrow(l.out.multi))
+    y.mod.multi[1:nrow(l.out)]   <- result2layout(res.sup=res.sup, ind.var=ind.var, layout=list(layout=l.out, lump=NA), lump=FALSE)$original
+    i <- 1
+    for(vary.var in names(vary)){
+        for(valu in vary[[vary.var]]){
+            pr.tmp <- which(grepl(vary.var, names(su.plot$model$parameters)))
+            if(length(pr.tmp)>1) warning(paste0("ambiguous parameter name ", vary.var, " supplied..."))
+            if(length(pr.tmp)<1) warning(paste0("could not find any parameter for ", vary.var))
+            su.plot$model$parameters[pr.tmp] <- valu
+            res.sup <- run.engine(su.plot)
+            ind.var <- result_index_var(res.sup=res.sup, file.o="outnames.txt", variables=c(var.obs,var.mod), outnames=sudriv$model$outnames)
+            y.mod.multi[(i*nrow(l.out)+1):((i+1)*nrow(l.out))] <- result2layout(res.sup=res.sup, ind.var=ind.var, layout=list(layout=l.out, lump=NA), lump=FALSE)$original
+            i <- i + 1
+        }
+
+    }
     y.obs   <- rep(NA, nrow(su.plot$layout$layout))
     y.obs[1:length(sudriv$observations)] <- sudriv$observations
     su.plot$layout$layout$time <- su.plot$layout$layout$time/24
-    l.out$time <- l.out$time/24
+    l.out.multi$time <- l.out.multi$time/24
     if(precip){
         layout.obs <- data.frame(var="P", time=sudriv$input$inputobs[,1]/24)
         layout.obs <- rbind(su.plot$layout$layout,layout.obs)
@@ -24,8 +41,14 @@ prepare.plot.layout <- function(sudriv, var.obs, var.mod=c()){
     }else{
         layout.obs <- su.plot$layout$layout
     }
-    return(list(layout.mod = list(layout=l.out),
+    vary2 <- vary
+    if(length(vary)>0){
+        vary2[[1]] <- c(sudriv$model$parameters[pr.tmp[1]], vary2[[1]]) ##ATTENTION: using pr.tmp here means that this function can only be applied if length(vary)<=1
+        if(as.logical(sudriv$model$args$parTran)[pr.tmp[1]]) vary2[[1]] <- exp(vary2[[1]])
+    }
+    return(list(layout.mod = list(layout=l.out.multi),
                 layout.obs = layout.obs,
-                y.mod = y.mod,
-                y.obs = y.obs))
+                y.mod = y.mod.multi,
+                y.obs = y.obs,
+                vary = vary2))
 }
