@@ -34,7 +34,7 @@ construct.prior <- function(sudriv, file=NA, rep.var=FALSE){
             }else if(distdef[p.curr,"Parameter"] %in% names(sudriv$likelihood$parameters)){
                 distdef.likeli[[distdef[p.curr, "Parameter"]]] <- def.curr
             }else{
-                stop(paste("parameter", distdef[p.curr,"Parameter"], "not found"))
+                warning(paste("parameter", distdef[p.curr,"Parameter"], "not found"))
             }
         }
     }
