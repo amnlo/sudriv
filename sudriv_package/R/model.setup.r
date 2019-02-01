@@ -63,7 +63,7 @@ function(sudriv, settings = "settings.json",writeO=TRUE,f.path.hru=NA,f.path.tra
     if(is.null(sudriv$model$outnames)){
         model$outnames <- outnames
     }else{
-        model$outnames <- sudriv$model$outnames
+        model$outnames <- outnames
     }
     if(is.null(sudriv$model$parnames)){
         model$parnames <- parnames
