@@ -76,7 +76,7 @@ calcpdf <- function(x,distpar,log=FALSE)
   if ( distpar[1] == "LognormalTrunc" | distpar[1] == "lognormaltrunc" )
   {
     # truncated lognormal distribution; parameters are mean, sd, min and max;
-    # R parameters are mean and sd of the log of the random variable
+                                        # R parameters are mean and sd of the log of the random variable
     mean    <- as.numeric(distpar[2])
     sd      <- as.numeric(distpar[3])
     sdlog   <- sqrt(log(1+sd^2/mean^2))

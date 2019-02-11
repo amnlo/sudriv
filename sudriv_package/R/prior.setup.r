@@ -67,3 +67,20 @@ prior.likeli.setup <- function(sudriv, dist="normal",mean=0,sd=1,cor=0,
     sudriv$likelihood$prior$file <- file
     return(sudriv)
 }
+
+prior.hyper.setup <- function(sudriv, dist="normal",mean=0,sd=1,cor=0,
+                          cor.inv=NA,log=TRUE,distdef=NA,file=NA){
+    ## Checks and preparation ===================================================
+    mean <- as.vector(mean)
+    sd <- as.vector(sd)
+    if (length(sd) != length(mean)) stop("prior.likeli.setup: illegal dimension of standard deviations")
+
+    ## Add prior definition to sudriv object
+    sudriv$hyperparameters$prior$dist <- dist
+    sudriv$hyperparameters$prior$mean <- mean
+    sudriv$hyperparameters$prior$sd   <- sd
+    sudriv$hyperparameters$prior$log  <- log
+    sudriv$hyperparameters$prior$distdef <- distdef
+    sudriv$hyperparameters$prior$file <- file
+    return(sudriv)
+}

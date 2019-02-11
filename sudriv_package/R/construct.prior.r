@@ -10,7 +10,7 @@ construct.prior <- function(sudriv, file=NA, rep.var=FALSE){
     for(p in 1:length(sudriv$likelihood$parameters)){
         distdef.likeli[[names(sudriv$likelihood$parameters)[p]]] <- c("uniform", sudriv$likelihood$lb[p], sudriv$likelihood$ub[p])
     }
-
+    distdef.hyper <- list()
     if(!is.na(file)){
         distdef <- read.table(file=file, sep="", header=TRUE)
         ## colnames(distdef) <- distdef[1,]
@@ -33,15 +33,17 @@ construct.prior <- function(sudriv, file=NA, rep.var=FALSE){
                 distdef.model[[distdef[p.curr, "Parameter"]]] <- def.curr
             }else if(distdef[p.curr,"Parameter"] %in% names(sudriv$likelihood$parameters)){
                 distdef.likeli[[distdef[p.curr, "Parameter"]]] <- def.curr
+            }else if(grepl("HYPER", distdef[p.curr,"Parameter"])){# if it is a hyperparameter
+                nme <- distdef[p.curr, "Parameter"]
+                distdef.hyper[[nme]] <- def.curr
+                sudriv$hyperparameters[[nme]]$formula <- as.expression(distdef[p.curr,"formula"])
             }else{
                 warning(paste("parameter", distdef[p.curr,"Parameter"], "not found"))
             }
         }
     }
-
-
-    sudriv <- prior.model.setup(sudriv, dist="indep", distdef=distdef.model)
+    sudriv <- prior.model.setup( sudriv, dist="indep", distdef=distdef.model)
     sudriv <- prior.likeli.setup(sudriv, dist="indep", distdef=distdef.likeli)
-
+    sudriv <- prior.hyper.setup( sudriv, dist="indep", distdef=distdef.hyper)
     return(sudriv)
 }
