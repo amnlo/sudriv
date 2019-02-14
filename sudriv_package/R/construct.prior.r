@@ -44,6 +44,6 @@ construct.prior <- function(sudriv, file=NA, rep.var=FALSE){
     }
     sudriv <- prior.model.setup( sudriv, dist="indep", distdef=distdef.model)
     sudriv <- prior.likeli.setup(sudriv, dist="indep", distdef=distdef.likeli)
-    sudriv <- prior.hyper.setup( sudriv, dist="indep", distdef=distdef.hyper)
+    if(length(distdef.hyper)>0) sudriv <- prior.hyper.setup( sudriv, dist="indep", distdef=distdef.hyper)
     return(sudriv)
 }

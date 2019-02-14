@@ -1,5 +1,5 @@
 model.setup <-
-function(sudriv, settings = "settings.json",writeO=TRUE,f.path.hru=NA,f.path.transK=NA,
+function(sudriv, settings = "settings.json",writeO=TRUE,f.path.hru=NA,f.path.transK=NA,f.path.hyperfun=NA,
                             ...){
     options(list(stringsAsFactors = FALSE))
     if(class(settings) == "character"){
@@ -48,6 +48,14 @@ function(sudriv, settings = "settings.json",writeO=TRUE,f.path.hru=NA,f.path.tra
         transK <- NULL
     }
 
+    ## ==================================================================
+    ## load hyperstate functions
+    if(!is.na(f.path.hyperfun)){
+        load(f.path.hyperfun)
+    }else{
+        hyperfun <- NULL
+    }
+
     ## ==========================
     ## construct model object:
     model <- list()
@@ -74,6 +82,7 @@ function(sudriv, settings = "settings.json",writeO=TRUE,f.path.hru=NA,f.path.tra
     model$prior      <- sudriv$model$prior      ## inherit existing prior for model parameters (if present)
     model$hru.areas  <- hru.areas
     model$transK     <- transK
+    model$hyperfun   <- hyperfun
     class(model) <- "model"
     sudriv$model <- model
     return(sudriv)
