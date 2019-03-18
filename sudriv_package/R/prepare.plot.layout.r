@@ -9,10 +9,24 @@ prepare.plot.layout <- function(sudriv, var.obs, var.mod=c(), vary=list()){
     l.mod$var <- rep(var.mod, each = nq)
     su.plot$layout$layout <- rbind(su.plot$layout$layout, l.mod)
     res.sup <- run.engine(su.plot)
-    ind.var <- result_index_var(res.sup=res.sup, file.o="outnames.txt", variables=c(var.obs,var.mod), outnames=sudriv$model$outnames)
+    ## include the hyperstates (similar to run.model...)
+    var <- c(var.obs, var.mod)
+    outnames <- su.plot$model$outnames
+    if(any(grepl("HYPERSTATE", var))){#dealing with hyperstates that are not directly calculated by the model, but they are calculated here based on the output of the model
+        if(is.null(sudriv$model$hyperfun)) stop("hyperfun not defined, but found hyperstates")
+        hyps <- unique(var[grepl("HYPERSTATE", var)])
+        j <- 1
+        for(hyp.curr in hyps){
+            result.hyp <- sudriv$model$hyperfun[[j]](res.sup, su.plot)
+            res.sup$y <- c(res.sup$y, result.hyp) # add the calculated output to the result vector, as if it was calculated by superflex
+            outnames <- c(outnames, hyp.curr) # adapt the outnames accordingly
+            j <- j + 1
+        }
+    }
+    ind.var <- result_index_var(res.sup=res.sup, file.o="outnames.txt", variables=var, outnames=outnames)
     ## prepare layout for output times of model
     l.out <- data.frame(var=rep(c(var.obs, var.mod), each=nrow(sudriv$input$inputobs)), time=rep(sudriv$input$inputobs[,1], length(c(var.obs, var.mod))))
-    l.out.multi <- data.frame(var=rep(c(var.obs, var.mod), each=nrow(sudriv$input$inputobs), times=1+length(unlist(vary))), time=rep(sudriv$input$inputobs[,1], times=length(c(var.obs,var.mod))*(1+length(unlist(vary)))))
+    l.out.multi <- data.frame(var=rep(var, each=nrow(sudriv$input$inputobs), times=1+length(unlist(vary))), time=rep(sudriv$input$inputobs[,1], times=length(var)*(1+length(unlist(vary)))))
     l.out.multi$vary <- rep(0:length(unlist(vary)), each=nrow(l.out))
     y.mod.multi <- rep(NA, nrow(l.out.multi))
     y.mod.multi[1:nrow(l.out)]   <- result2layout(res.sup=res.sup, ind.var=ind.var, layout=list(layout=l.out, lump=NA), lump=FALSE)$original
@@ -24,7 +38,7 @@ prepare.plot.layout <- function(sudriv, var.obs, var.mod=c(), vary=list()){
             if(length(pr.tmp)<1) warning(paste0("could not find any parameter for ", vary.var))
             su.plot$model$parameters[pr.tmp] <- valu
             res.sup <- run.engine(su.plot)
-            ind.var <- result_index_var(res.sup=res.sup, file.o="outnames.txt", variables=c(var.obs,var.mod), outnames=sudriv$model$outnames)
+            ind.var <- result_index_var(res.sup=res.sup, file.o="outnames.txt", variables=var, outnames=sudriv$model$outnames)
             y.mod.multi[(i*nrow(l.out)+1):((i+1)*nrow(l.out))] <- result2layout(res.sup=res.sup, ind.var=ind.var, layout=list(layout=l.out, lump=NA), lump=FALSE)$original
             i <- i + 1
         }
