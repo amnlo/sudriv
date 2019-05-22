@@ -69,7 +69,13 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         masses <- TRUE
         ## calculate the sorption coefficient Kd to compare to field measurements
         hL1 <- exp(parameters["GloTr%CmltSlOne_IR"]) ## ATTENTION: here we assume that only global dead volumes are relevant and that they are transformed
-        hL2 <- exp(parameters["GloTr%CmltSlTwo_IR"]) ## ATTENTION: here we assume that only global dead volumes are relevant and that they are transformed
+        if(any(grepl("Lv2",variables))){
+            twoLv <- TRUE
+            hL2 <- exp(parameters["GloTr%CmltSlTwo_IR"]) ## ATTENTION: here we assume that only global dead volumes are relevant and that they are transformed
+        }else{
+            twoLv <- FALSE
+            hL2 <- 0
+        }
         Smax <- exp(parameters["Glo%CmltSmax_IR"]) ## ATTENTION: here we assume that only global Smax_IR is relevant and that it is transformed
         rho.soil.bulk <- 1.2 ## kg/dm^3, i.e. kg/L
         ne <- 0.35
@@ -81,7 +87,11 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         cases <- lapply(variables[lvls], function(x) strsplit(x, split="Wv_")[[1]])
         print(cases)
         concs1 <- lapply(cases, function(x) paste0(x[1], c("Tc1","Tc2"), "Lv1_", x[2]))
-        concs2 <- lapply(cases, function(x) paste0(x[1], c("Tc1","Tc2"), "Lv2_", x[2]))
+        if(twoLv){
+            concs2 <- lapply(cases, function(x) paste0(x[1], c("Tc1","Tc2"), "Lv2_", x[2]))
+        }else{
+            concs2 <- NULL
+        }
         y.dat.conc <- subset(y.dat, var %in% unlist(c(concs1,concs2)) & grepl("mod", modobs))
         print(head(y.dat.conc))
         y.dat.conc <- spread(y.dat.conc[,c("time","var","y")], key="var", value="y")
@@ -93,13 +103,13 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         y.dat.lvl <- y.dat.lvl[,c(1,rep(2:ncol(y.dat.lvl),each=2))]
         print(head(y.dat.lvl))
         reservoirs <- toupper(substr(unlist(cases)[grep("S.1",unlist(cases))], 2, 2))
-        par.names.global <- rep(paste0("GloTr%CmltSl", rep(c("One_", "Two_"),each=length(cases)), reservoirs, "R"), each=2)
-        par.names.local <- paste0(substr(unlist(cases)[grep("U[0-9]?",unlist(cases))], 1, 2), rep(c("T1","T2"),length(cases)), "%Sl", rep(c("One_", "Two_"),each=2*length(cases)), rep(reservoirs,each=2), "R")
-        const.lvls <- matrix(exp(parameters[par.names.global])*exp(parameters[par.names.local]), nrow=nrow(y.dat.lvl), ncol=4*length(lvls), byrow=TRUE) # ATTENTION: here we assume that the parameters that describe the dead volumes of the reservoirs are transformed!
-        colnames(const.lvls) <- paste0(rep(unlist(lapply(cases, paste0, collapse="Wv_")),times=2), rep(c("Lv1", "Lv2"),each=2))
+        par.names.global <- rep(paste0("GloTr%CmltSl", rep(c("One_", switch(twoLv,"Two_",NULL)),each=length(cases)), reservoirs, "R"), each=2)
+        par.names.local <- paste0(substr(unlist(cases)[grep("U[0-9]?",unlist(cases))], 1, 2), rep(c("T1","T2"),length(cases)), "%Sl", rep(c("One_", switch(twoLv,"Two_",NULL)),each=2*length(cases)), rep(reservoirs,each=2), "R")
+        const.lvls <- matrix(exp(parameters[par.names.global])*exp(parameters[par.names.local]), nrow=nrow(y.dat.lvl), ncol=ifelse(twoLv,4,2)*length(lvls), byrow=TRUE) # ATTENTION: here we assume that the parameters that describe the dead volumes of the reservoirs are transformed!
+        colnames(const.lvls) <- paste0(rep(unlist(lapply(cases, paste0, collapse="Wv_")),times=2), rep(c("Lv1", switch(twoLv,"Lv2",NULL)),each=2))
         y.dat.lvl <- cbind(y.dat.lvl, const.lvls)
         y.dat.mass <- cbind(y.dat.conc$time, y.dat.conc[,-1] * y.dat.lvl[,-1]) # calculate the mass
-        colnames(y.dat.mass) <- c("time",paste0(rep(unlist(lapply(cases, function(x) paste0(x[1], c("MaT1_","MaT2_"),x[2]))),times=3), rep(c("Lv0", "Lv1", "Lv2"),each=2)))
+        colnames(y.dat.mass) <- c("time",paste0(rep(unlist(lapply(cases, function(x) paste0(x[1], c("MaT1_","MaT2_"),x[2]))),times=ifelse(twoLv,3,2)), rep(c("Lv0", "Lv1", switch(twoLv,"Lv2",NULL)),each=2)))
         ## make the data narrow again
         y.dat.mass <- gather(y.dat.mass, var, y, -time)
         y.dat <- y.dat.mass
