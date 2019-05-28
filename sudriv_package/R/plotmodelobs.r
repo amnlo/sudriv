@@ -179,7 +179,7 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         ggplot.obj <- do.call(gtable_rbind, ggplot.obj)
     }else{
         ggplot.obj <- ggplot(y.dat, aes(x=time, y=y, shape=modobs, col=modobs)) + scale_x_datetime(limits=xlim) + scale_y_continuous(limits=ylim)
-        ggplot.obj <- ggplot.obj + geom_point(data=subset(y.dat, modobs=="obs" & var!="P"), size=1.8) + geom_line(data=subset(y.dat, modobs!="obs" & var!="P"), size=1.2)+ theme_bw(base_size=20) + theme(title=element_text(size=14), axis.text.x=element_text(size=20))
+        ggplot.obj <- ggplot.obj + geom_point(data=subset(y.dat, modobs=="obs" & var!="P"), size=1.8) + geom_line(data=subset(y.dat, modobs!="obs" & var!="P"), size=0.8)+ theme_bw(base_size=20) + theme(title=element_text(size=14), axis.text.x=element_text(size=20))
         if("P" %in% y.dat$var) ggplot.obj <- ggplot.obj + geom_col(data=subset(y.dat, var=="P"))
         ggplot.obj <- ggplot.obj + labs(x="", y="", shape="", col="", title=names(vary)[1]) + facet_wrap(~vartrans, nrow=length(variables), scales=scales, labeller=label_parsed, strip.position="left")
     }
