@@ -49,7 +49,6 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
                            c(5))
         strmflws <- variables[grepl("Wv", variables)]
         for(var.strm in strmflws){
-            print(var.strm)
             if(grepl("C[0-9]+", var.strm) | grepl("R[0-9]+", var.strm)){
                 i <- as.numeric(substr(var.strm, start=2, stop=gregexpr("Wv", var.strm)[[1]]-1))
                 ##i <- cumulation[[i]]
@@ -62,6 +61,14 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
             }
             y.dat[y.dat$var == var.strm,"y"] <- y.dat[y.dat$var == var.strm,"y"] * sum(hru.areas[i,j])/15/60
         }
+    }
+    ## Get the fluxes of the tracers right (multiply by area of HRU)
+    trac.flux <- unique(y.dat$var[grepl("Tm.*_Q", y.dat$var)])
+    for(flx.curr in trac.flux){
+        i <- 1 ## ATTENTION: this is only implemented for the lumped case, no subcatchments possible
+        stp=as.numeric(gregexpr("F[0-9]+", flx.curr)[[1]]-1)
+        j <- as.numeric(substr(flx.curr, start=2, stop=stp)) # get unit (HRU) of current flux
+        y.dat[y.dat$var ==flx.curr, "y"] <- y.dat[y.dat$var ==flx.curr,"y"] * sum(hru.areas[i,j])/1000/1000 # convert from micro g to g
     }
     masses <- FALSE
     fluxes.multhru <- FALSE
@@ -93,23 +100,27 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
             concs2 <- NULL
         }
         y.dat.conc <- subset(y.dat, var %in% unlist(c(concs1,concs2)) & grepl("mod", modobs))
-        print(head(y.dat.conc))
         y.dat.conc <- spread(y.dat.conc[,c("time","var","y")], key="var", value="y")
         y.dat.conc <- y.dat.conc[,c("time",rep(unlist(concs1),2),unlist(concs2))]
-        print(head(y.dat.conc))
+        print("conc:")
+        print(summary(y.dat.conc))
         y.dat.lvl <- subset(y.dat, var %in% variables[lvls] & grepl("mod", modobs))
-        print(head(y.dat.lvl))
         y.dat.lvl <- spread(y.dat.lvl[,c("time","var","y")], key="var", value="y")
         y.dat.lvl <- y.dat.lvl[,c(1,rep(2:ncol(y.dat.lvl),each=2))]
-        print(head(y.dat.lvl))
         reservoirs <- toupper(substr(unlist(cases)[grep("S.1",unlist(cases))], 2, 2))
         par.names.global <- rep(paste0("GloTr%CmltSl", rep(c("One_", switch(twoLv,"Two_",NULL)),each=length(cases)), reservoirs, "R"), each=2)
         par.names.local <- paste0(substr(unlist(cases)[grep("U[0-9]?",unlist(cases))], 1, 2), rep(c("T1","T2"),length(cases)), "%Sl", rep(c("One_", switch(twoLv,"Two_",NULL)),each=2*length(cases)), rep(reservoirs,each=2), "R")
+        print(par.names.global)
+        print(par.names.local)
         const.lvls <- matrix(exp(parameters[par.names.global])*exp(parameters[par.names.local]), nrow=nrow(y.dat.lvl), ncol=ifelse(twoLv,4,2)*length(lvls), byrow=TRUE) # ATTENTION: here we assume that the parameters that describe the dead volumes of the reservoirs are transformed!
         colnames(const.lvls) <- paste0(rep(unlist(lapply(cases, paste0, collapse="Wv_")),times=2), rep(c("Lv1", switch(twoLv,"Lv2",NULL)),each=2))
         y.dat.lvl <- cbind(y.dat.lvl, const.lvls)
+        print("lvl:")
+        print(summary(y.dat.lvl))
         y.dat.mass <- cbind(y.dat.conc$time, y.dat.conc[,-1] * y.dat.lvl[,-1]) # calculate the mass
         colnames(y.dat.mass) <- c("time",paste0(rep(unlist(lapply(cases, function(x) paste0(x[1], c("MaT1_","MaT2_"),x[2]))),times=ifelse(twoLv,3,2)), rep(c("Lv0", "Lv1", switch(twoLv,"Lv2",NULL)),each=2)))
+        print("mass:")
+        print(summary(y.dat.mass))
         ## make the data narrow again
         y.dat.mass <- gather(y.dat.mass, var, y, -time)
         y.dat <- y.dat.mass
@@ -131,8 +142,10 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
     if(!is.null(xlim)) y.dat <- subset(y.dat, time >= xlim[1] & time <= xlim[2])
     if(sum(grepl("F[0-9].*Qstrm", variables)) > 0){
     # stack the fluxes of water or tracers that leave the Hrus on top of each other
-        if(grepl("Tm[0-9]", variables)){yl <- expression("Load ("*mu*g*"/15min)")}else{yl <- "Streamflow (l/s)"}
-        ggplot.obj <- ggplot(subset(y.dat, !grepl("C[0-9]+", var)), aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=yl, fill="")
+        dd <- subset(y.dat, !grepl("C[0-9]+", var))
+        sum.load <- tapply(dd$y, dd$vartrans, sum, na.rm=TRUE)
+        if(grepl("Tm[0-9]", variables)){yl <- expression("Load ("*g*"/15min)")}else{yl <- "Streamflow (l/s)"}
+        ggplot.obj <- ggplot(dd, aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=yl, fill="", caption=bquote(.(paste(c(rbind(dimnames(sum.load)[[1]],signif(sum.load,3))), collapse=" "))))
         width = 15
         height = 10
     }else if(masses){
@@ -174,8 +187,16 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         fluxes.multhru <- TRUE
         ggplot.obj <- list()
         if(sum(grepl("Wv", variables))>0)  ggplot.obj <- c(ggplot.obj, list(ggplotGrob(ggplot(subset(y.dat, grepl("Wv", var) | grepl("All",var)), aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y="Streamflow contribution (l/s)", fill=""))))
-        if(sum(grepl("Tm1", variables))>0) ggplot.obj <- c(ggplot.obj, list(ggplotGrob(ggplot(subset(y.dat, grepl("Tm1", var)| grepl("All",var)), aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=expression("Load ("*mu*g*"/15min)"), fill=""))))
-        if(sum(grepl("Tm2", variables))>0) ggplot.obj <- c(ggplot.obj, list(ggplotGrob(ggplot(subset(y.dat, grepl("Tm2", var) | grepl("All",var)), aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=expression("Load ("*mu*g*"/15min)"), fill=""))))
+        if(sum(grepl("Tm1", variables))>0){
+            dd <- subset(y.dat, grepl("Tm1", var)| grepl("All",var))
+            sum.load.atra <- tapply(dd$y, dd$vartrans, sum, na.rm=TRUE)
+            ggplot.obj <- c(ggplot.obj, list(ggplotGrob(ggplot(dd, aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=expression("Load ("*g*"/15min)"), fill="", caption=bquote(.(paste(c(rbind(dimnames(sum.load.atra)[[1]],signif(sum.load.atra,3))), collapse=" "))~g)))))
+        }
+        if(sum(grepl("Tm2", variables))>0){
+            dd <- subset(y.dat, grepl("Tm2", var)| grepl("All",var))
+            sum.load.terb <- tapply(dd$y, dd$vartrans, sum, na.rm=TRUE)
+            ggplot.obj <- c(ggplot.obj, list(ggplotGrob(ggplot(subset(y.dat, grepl("Tm2", var) | grepl("All",var)), aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=expression("Load ("*g*"/15min)"), fill="", caption=paste(c(rbind(dimnames(sum.load.terb)[[1]],signif(sum.load.terb,3))), collapse=" ")))))
+        }
         ggplot.obj <- do.call(gtable_rbind, ggplot.obj)
     }else{
         ggplot.obj <- ggplot(y.dat, aes(x=time, y=y, shape=modobs, col=modobs)) + scale_x_datetime(limits=xlim) + scale_y_continuous(limits=ylim)
