@@ -10,14 +10,6 @@ function(sudriv){ ## runs the superflex model for the given parameters, dt, ntim
     nout         = args.model$nout
     modelID      = args.model$modelID
     outnames     = args.model$outnames
-    par <- sudriv$model$parameters
-    lded <- is.loaded("runmodel")
-    if(!lded) cat("function name not loaded\n")
-    tol <- 1e-10
-    if(any(is.na(par))){
-        write(par, file="debug.txt")
-        stop("par contains NAs")
-    }
     dt <- as.numeric(1.0)
     ntime <- as.integer(nrow(inputobs))
     time.in <- as.numeric(inputobs[,1])
@@ -29,6 +21,12 @@ function(sudriv){ ## runs the superflex model for the given parameters, dt, ntim
     ntotout <- length(output)
     stateDef <- as.numeric(stateDef)
     npar.det <- as.integer(npar.det)
+    tol <- 1e-10
+    par <- sudriv$model$parameters
+    if(any(is.na(par))){
+        write(par, file="debug.txt")
+        stop("par contains NAs")
+    }
     out.bounds <- par<parLo | par>parHi
     if(sum(out.bounds) > 0){
         if(any(par[out.bounds]<parLo[out.bounds]-tol | par[out.bounds]>parHi[out.bounds]+tol)){
@@ -54,7 +52,32 @@ function(sudriv){ ## runs the superflex model for the given parameters, dt, ntim
         cat("ks post: ", par[ind.ks], "\n")
         cat("alph: ", par[ind.alph], "\n")
     }
-    result <- .Fortran("runmodel", par=as.double(par), stateDef=as.double(stateDef), npar=as.integer(npar.det), ntime=as.integer(ntime), ninp=as.integer(ninp), nout=as.integer(nout), dt=as.double(dt), inputobs=as.double(inputobs), modelID=as.integer(modelID), output=as.double(output))
+    if(is.null(sudriv$model$timedep)){
+        lded <- is.loaded("runmodel")
+        if(!lded) cat("function name not loaded\n")
+        result <- .Fortran("runmodel", par=as.double(par), stateDef=as.double(stateDef), npar=as.integer(npar.det), ntime=as.integer(ntime), ninp=as.integer(ninp), nout=as.integer(nout), dt=as.double(dt), inputobs=as.double(inputobs), modelID=as.integer(modelID), output=as.double(output))
+    }else{
+        timedeppar <- sudriv$model$timedep$par
+        pTimedep   <- sudriv$model$timedep$pTimedep
+        if(ncol(timedeppar) != sum(pTimedep)) stop("dim of timedeppar does not agree with pTimedep")
+        nTimedep <- ncol(timedeppar)
+        if(!all(dim(timedeppar) == c(ntime,nTimedep))) stop("time dep parameter dimension mismatch")
+        lded <- is.loaded("runsfmodel")
+        if(!lded) cat("function name not loaded\n")
+        rng <- apply(timedeppar, 2, range)
+        out.bounds <- rng[1,] < parLo[pTimedep] | rng[2,] > parHi[pTimedep]
+        if(sum(out.bounds) > 0){
+            cat("par value:\n")
+            print(rng[,which(out.bounds)])
+            cat("lower bound:\n")
+            print(parLo[pTimedep][which(out.bounds)])
+            cat("upper bound:\n")
+            print(parHi[pTimedep][which(out.bounds)])
+            stop(paste("parameter(s) ", paste(which(out.bounds), collapse=" "), " is (are) out of bounds", sep = " "))
+        }
+        timedeppar[,which(parTran[pTimedep]==1)] <- exp(timedeppar[,which(parTran[pTimedep]==1)])
+        result <- .Fortran("runsfmodel", output=as.double(output), inputobs=as.double(inputobs), stateDef=as.double(stateDef), parMat=as.double(timedeppar), nRowPar=ntime, nTimedep=as.integer(nTimedep), pTimedep=as.logical(pTimedep), npar=as.integer(npar.det), pDef=as.double(par), nout=as.integer(nout), ninp=as.integer(ninp), dt=as.double(dt), err=as.integer(0), modelID=as.integer(modelID))
+    }
     result <- list(y=result$output, time=time.in, nout=nout)
     return(result)
 }
