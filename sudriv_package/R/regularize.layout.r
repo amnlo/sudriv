@@ -1,4 +1,4 @@
-regularize.layout <- function(sudriv, threshold=50000, max.dt=0.5, min.dt=0.2, remove=NA){
+regularize.layout <- function(sudriv, threshold=50000, set.dt=NA, max.dt=0.5, min.dt=0.2, remove=NA, aggregate=FALSE){
     ## ATTENTION, this function cannot properly deal with su$layout$calib. It just assigns calibration to all the regularized layout sections and assumes that there is no prediction.
     vars <- as.character(unique(sudriv$layout$layout$var))
     layout.new <- list()
@@ -16,8 +16,12 @@ regularize.layout <- function(sudriv, threshold=50000, max.dt=0.5, min.dt=0.2, r
             dts <- dts[as.numeric(names(dts))<=max.dt & as.numeric(names(dts))>=min.dt]
             if(length(dts)<1) stop(paste0("no time step size matches specification in variable ", var.curr))
             if(any(!is.na(lump.old[ind.var]))) stop(paste0("regularize.layout cannot deal with lump in variable ", var.curr))
-            cover <- as.numeric(names(dts))*as.numeric(dts)
-            best.dt <- as.numeric(names(dts)[which.max(cover)])
+            if(is.na(set.dt[1])){
+                cover <- as.numeric(names(dts))*as.numeric(dts)
+                best.dt <- as.numeric(names(dts)[which.max(cover)])
+            }else{
+                best.dt <- set.dt
+            }
             t.old <- l.curr$time
             t.new <- seq(from=t.old[1], to=t.old[length(t.old)], by=best.dt)
             disfun <- function(x,t.new,t.old){
@@ -28,7 +32,17 @@ regularize.layout <- function(sudriv, threshold=50000, max.dt=0.5, min.dt=0.2, r
             t.new <- t.new + shift
             t.new <- t.new[t.new >= t.old[1]]
             t.new <- t.new[t.new <= t.old[length(t.old)]]
-            obs.curr <- approx(t.old, sudriv$observations[ind.var], xout=t.new)$y #ATTENTION: this is only correct if the observations are instantaneous measurements and not averaged over timestep.
+            if(aggregate){
+                fac <- cut(t.old, breaks=t.new, right=TRUE)
+                obs.curr <- as.numeric(tapply(sudriv$observations[ind.var], fac, mean, na.rm=TRUE)) # average per interval
+                ##obs.curr[ind] <- approx(t.old, sudriv$observations[ind.var], xout=t.new[2:length(t.new)][ind])$y
+                obs.curr <- as.numeric(c(obs.curr[1], obs.curr))
+                ind <- which(is.na(obs.curr))
+                obs.curr <- obs.curr[-ind]
+                t.new <- t.new[-ind]
+            }else{
+                obs.curr <- approx(t.old, sudriv$observations[ind.var], xout=t.new)$y #ATTENTION: this is only correct if the observations are instantaneous measurements and not averaged over timestep.
+            }
             lump.curr <- rep(NA, length(t.new))
             calib.curr <- i:(i+length(t.new)-1)
         }else{
