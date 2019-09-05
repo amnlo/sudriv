@@ -1,6 +1,6 @@
 ## This script contains functions to plot the model results and compare them to the observations
 
-plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list(), variables=NA, extend.to=NA, plot=TRUE, file=NA, scales=c("free","fixed","free_x","free_y"), xlim=NULL, ylim=NULL, per.area=TRUE, hru.areas=NA, distributed=FALSE, parameters=NA){
+plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list(), variables=NA, extend.to=NA, plot=TRUE, file=NA, scales=c("free","fixed","free_x","free_y"), xlim=NULL, ylim=NULL, per.area=TRUE, hru.areas=NA, distributed=FALSE, parameters=NA, write.load=FALSE){
     library(scales)
     ## gg_color_hue <- function(n) {
     ##     hues = seq(15, 375, length = n + 1)
@@ -85,8 +85,8 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         }
         Smax <- exp(parameters["Glo%CmltSmax_IR"]) ## ATTENTION: here we assume that only global Smax_IR is relevant and that it is transformed
         rho.soil.bulk <- 1.2 ## kg/dm^3, i.e. kg/L
-        ne <- 0.35
-        Kd <- (hL2 + hL1 - 0.1*Smax)/(rho.soil.bulk*Smax/ne)
+        ne <- 0.4
+        Kd <- (hL2 + hL1 - 0.06*hL1)/(rho.soil.bulk*Smax/ne)
 		half.life <- log(2)/(exp(parameters["GloTr%CmltKd_WR"])*4*24)
         y.dat$var <- as.character(y.dat$var)
         ## in this section of the code some assumptions are made to keep things simple: there are two tracers, the parameters of the dead levels are transformed, we get exactly the input columns (of y.dat) that we need, nothing more(?) and nothing less
@@ -145,7 +145,12 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         dd <- subset(y.dat, !grepl("C[0-9]+", var))
         sum.load <- tapply(dd$y, dd$vartrans, sum, na.rm=TRUE)
         if(grepl("Tm[0-9]", variables)){yl <- expression("Load ("*g*"/15min)")}else{yl <- "Streamflow (l/s)"}
-        ggplot.obj <- ggplot(dd, aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=yl, fill="", caption=bquote(.(paste(c(rbind(dimnames(sum.load)[[1]],signif(sum.load,3))), collapse=" "))))
+        ggplot.obj <- ggplot(dd, aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=yl, fill="", caption="")#bquote(.(paste(c(rbind(dimnames(sum.load)[[1]],signif(sum.load,3))), collapse=" "))))
+        nchar = length(unlist(strsplit(file, split = NULL)))
+        if(write.load){
+            loadfile <- paste0(substr(file, 1, nchar-4), "loads.txt")
+            write.table(data.frame(hru=dimnames(sum.load)[[1]], load=sum.load), file=loadfile, row.names=FALSE)
+        }
         width = 15
         height = 10
     }else if(masses){
@@ -186,16 +191,18 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         height <- 7
         fluxes.multhru <- TRUE
         ggplot.obj <- list()
-        if(sum(grepl("Wv", variables))>0)  ggplot.obj <- c(ggplot.obj, list(ggplotGrob(ggplot(subset(y.dat, grepl("Wv", var) | grepl("All",var)), aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y="Streamflow contribution (l/s)", fill=""))))
+        if(sum(grepl("Wv", variables))>0)  ggplot.obj <- c(ggplot.obj, list(ggplotGrob(ggplot(subset(y.dat, grepl("Wv", var) | grepl("All",var)), aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y="Streamflow contribution (l/s)", fill="") + theme_bw())))
         if(sum(grepl("Tm1", variables))>0){
             dd <- subset(y.dat, grepl("Tm1", var)| grepl("All",var))
             sum.load.atra <- tapply(dd$y, dd$vartrans, sum, na.rm=TRUE)
-            ggplot.obj <- c(ggplot.obj, list(ggplotGrob(ggplot(dd, aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=expression("Load ("*g*"/15min)"), fill="", caption=bquote(.(paste(c(rbind(dimnames(sum.load.atra)[[1]],signif(sum.load.atra,3))), collapse=" "))~g)))))
+            ggplot.obj <- c(ggplot.obj, list(ggplotGrob(ggplot(dd, aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=expression("Load ("*g*"/15min)"), fill="", caption="")#bquote(.(paste(c(rbind(dimnames(sum.load.atra)[[1]],signif(sum.load.atra,3))), collapse=" "))~g))
+                                                                                                                         + theme_bw())))
         }
         if(sum(grepl("Tm2", variables))>0){
             dd <- subset(y.dat, grepl("Tm2", var)| grepl("All",var))
             sum.load.terb <- tapply(dd$y, dd$vartrans, sum, na.rm=TRUE)
-            ggplot.obj <- c(ggplot.obj, list(ggplotGrob(ggplot(subset(y.dat, grepl("Tm2", var) | grepl("All",var)), aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=expression("Load ("*g*"/15min)"), fill="", caption=paste(c(rbind(dimnames(sum.load.terb)[[1]],signif(sum.load.terb,3))), collapse=" ")))))
+            ggplot.obj <- c(ggplot.obj, list(ggplotGrob(ggplot(subset(y.dat, grepl("Tm2", var) | grepl("All",var)), aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=expression("Load ("*g*"/15min)"), fill="", caption="")#paste(c(rbind(dimnames(sum.load.terb)[[1]],signif(sum.load.terb,3))), collapse=" "))
+                                                                                                                                                                          + theme_bw())))
         }
         ggplot.obj <- do.call(gtable_rbind, ggplot.obj)
     }else{

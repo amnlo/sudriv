@@ -22,6 +22,19 @@ function(sudriv, with.names=FALSE, settings = "settings.json", replace.param=FAL
     }
     ## use parameter names
     parnames <- read.table("parnames.txt", sep=",")
+    glo <- grep("Glo", parnames[,1])
+    for(glo.curr in glo){
+        print(glo.curr)
+        p2 <- gsub("Glo%Cmlt_", "", parnames[glo.curr,1])
+        p2 <- gsub("GloTr%Cmlt_", "", p2)
+        p2 <- gsub("Glo%Cmlt", "", p2)
+        p2 <- gsub("GloTr%Cmlt", "", p2)
+        p2 <- sub("^\\s+", "", p2)
+        print(p2)
+        nonglo <- grep(p2, parnames[,1])[length(grep(p2, parnames[,1]))]
+        parnames[glo.curr,2] <- parnames[nonglo,2]
+    }
+    print(parnames)
     units    <- sub("^\\s+", "", parnames[,2]) #trim leading whitespace and save units
     ## create vector that contains info about whether and how parameters are time-related
     time <- grepl("t", units)

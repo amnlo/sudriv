@@ -35,7 +35,7 @@ function(sudriv, settings = "settings.json",writeO=TRUE,f.path.hru=NA,f.path.tra
     ## ==================================================================
     ## read HRU areas
     if(!is.na(f.path.hru)){
-        hru.areas <- sudriv.readHRUs(f.path.hru)
+        hru.areas <- sudriv.readHRUs(f.path.hru, nsub=length(unique(as.integer(substr(outnames[grep("C[0-9]", outnames)], start=2, stop=2)))))
     }else{
         hru.areas <- NULL
     }
@@ -71,7 +71,7 @@ function(sudriv, settings = "settings.json",writeO=TRUE,f.path.hru=NA,f.path.tra
     if(is.null(sudriv$model$outnames)){
         model$outnames <- outnames
     }else{
-        model$outnames <- outnames
+        model$outnames <- sudriv$model$outnames
     }
     if(is.null(sudriv$model$parnames)){
         model$parnames <- parnames

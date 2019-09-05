@@ -118,7 +118,7 @@ sudriv.writeHRUs <- function(file, hru.frac, rout.mat=NA, version="1.0"){
           append=TRUE)
 }
 
-sudriv.readHRUs <- function(f.path.hru, nsub=5){
+sudriv.readHRUs <- function(f.path.hru, nsub=1){
     hru.areas <- as.matrix(read.table(file=f.path.hru, header=FALSE, sep="", skip=4, nrows=nsub))
     return(hru.areas)
 }
@@ -128,4 +128,59 @@ sudriv.readtransK <- function(f.path.transK){
     transK <- as.list(t(tk))
     names(transK) <- rownames(tk)
     return(transK)
+}
+
+read.app.hru.areas <- function(sudriv=NA, compare.models=NA, tag.mult=NA){
+    flux.atra.tot <- list()
+    flux.terb.tot <- list()
+    app.hru.areas <- list()
+    for(model.name in names(compare.models)){
+        if(is.na(sudriv)) su <- sudriv.setup(settings=compare.models[model.name])
+        path <- paste0("../output/", su$settings$subcatchment, su$settings$structure, "/", tag.mult[model.name])
+        ## Read the total loads for the maximum likelihood case
+        loadsA <- read.table(paste0(path, "/states_fluxA_Eapp_",tag.mult[model.name], "loads.txt"), header=TRUE)
+        loadsA[,"hru"] <- gsub("Shortcut", "Connected", loadsA[,"hru"])
+        loadsA[,"hru"] <- gsub("SC and Drained", "Connected and Drained", loadsA[,"hru"])
+        loadsA[,"hru"] <- gsub("Rest", "Unconnected", loadsA[,"hru"])
+        atr <- loadsA[,"load"]
+        names(atr) <- loadsA[,"hru"]
+        loadsT <- read.table(paste0(path, "/states_fluxT_Eapp_",tag.mult[model.name], "loads.txt"), header=TRUE)
+        loadsT[,"hru"] <- gsub("Shortcut", "Connected", loadsT[,"hru"])
+        loadsT[,"hru"] <- gsub("SC and Drained", "Connected and Drained", loadsT[,"hru"])
+        loadsT[,"hru"] <- gsub("Rest", "Unconnected", loadsT[,"hru"])
+        ter <- loadsT[,"load"]
+        names(ter) <- loadsT[,"hru"]
+        flux.atra.tot[[model.name]] = atr
+        flux.terb.tot[[model.name]] = ter
+	loads.det <- list(flux.atra.tot=flux.atra.tot, flux.terb.tot=flux.terb.tot)
+        if(grepl("ference",model.name)){
+            earl <- read.table("../output/modelcomparison/tt_early_eros0wtns0.txt", header=TRUE)
+            late <- read.table("../output/modelcomparison/tt_late_eros0wtns0.txt", header=TRUE)
+        }else if(grepl("M4",model.name)){
+            earl <- read.table("../output/modelcomparison/tt_early_eros0wtns0.txt", header=TRUE)
+            late <- read.table("../output/modelcomparison/tt_late_eros0wtns0.txt", header=TRUE)
+        }
+        if(grepl("ference",model.name) | grepl("M4",model.name)){
+            app.hru.areas[["atra"]][[model.name]] <- c("Impervious"=earl["A1","AtraImperv"],
+                                                       "Connected"=earl["A1","AtraConn"],
+                                                       "Drained"=earl["A1","AtraDrng"],
+                                                       "Connected and Drained"=earl["A1","AtraConnDrng"],
+                                                       "Unconnected"=earl["A1","AtraDisconn"])
+            app.hru.areas[["terb"]][[model.name]][["first"]] <- c("Impervious"=earl["A1","TerbImperv"],
+                                                                  "Connected"=earl["A1","TerbConn"],
+                                                                  "Drained"=earl["A1","TerbDrng"],
+                                                                  "Connected and Drained"=earl["A1","TerbConnDrng"],
+                                                                  "Unconnected"=earl["A1","TerbDisconn"])
+            app.hru.areas[["terb"]][[model.name]][["second"]] <- c("Impervious"=late["A1","TerbImperv"],
+                                                                   "Connected"=late["A1","TerbConn"],
+                                                                   "Drained"=late["A1","TerbDrng"],
+                                                                   "Connected and Drained"=earl["A1","TerbConnDrng"],
+                                                                   "Unconnected"=late["A1","TerbDisconn"])
+        }else{
+            app.hru.areas[["atra"]][[model.name]] <- NA
+            app.hru.areas[["terb"]][[model.name]][["first"]] <- NA
+            app.hru.areas[["terb"]][[model.name]][["second"]] <- NA
+        }
+    }
+    return(list(loads.det=loads.det, app.hru.areas=app.hru.areas))
 }
