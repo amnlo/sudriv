@@ -1,6 +1,6 @@
 ## This script contains functions to plot the model results and compare them to the observations
 
-plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list(), variables=NA, extend.to=NA, plot=TRUE, file=NA, scales=c("free","fixed","free_x","free_y"), xlim=NULL, ylim=NULL, per.area=TRUE, hru.areas=NA, distributed=FALSE, parameters=NA, write.load=FALSE){
+plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list(), variables=NA, extend.to=NA, plot=TRUE, file=NA, scales=c("free","fixed","free_x","free_y"), xlim=NULL, ylim=NULL, per.area=TRUE, hru.areas=NA, distributed=FALSE, parameters=NA, write.load=FALSE, timestep.fac=1){
     library(scales)
     ## gg_color_hue <- function(n) {
     ##     hues = seq(15, 375, length = n + 1)
@@ -10,7 +10,7 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
     strmflw.units <- ifelse(per.area,"(mm/15min)","l/s")
     ##translate.var <- c("C1Tc1_Qstream", "C1Tc2_Qstream", "C2Tc1_Qstream", "C2Tc2_Qstream", "C3Tc1_Qstream", "C3Tc2_Qstream", "C4Tc1_Qstream", "C4Tc2_Qstream", "C5Tc1_Qstream", "C5Tc2_Qstream")
     translate.var <- c("C1Wv_Qstream", "C2Wv_Qstream", "C3Wv_Qstream", "C4Wv_Qstream", "C5Wv_Qstream", "C1Tc1_Qstream", "C1Tc2_Qstream", "C2Tc1_Qstream", "C2Tc2_Qstream", "C3Tc1_Qstream", "C3Tc2_Qstream", "C4Tc1_Qstream", "C4Tc2_Qstream", "C5Tc1_Qstream", "C5Tc2_Qstream", "U1F1Wv_Qstrm", "U2F1Wv_Qstrm", "U3F1Wv_Qstrm", "U4F1Wv_Qstrm", "U5F1Wv_Qstrm", "U1F1Tm1_Qstrm", "U2F1Tm1_Qstrm", "U3F1Tm1_Qstrm", "U4F1Tm1_Qstrm", "U5F1Tm1_Qstrm", "U1F1Tm2_Qstrm", "U2F1Tm2_Qstrm", "U3F1Tm2_Qstrm", "U4F1Tm2_Qstrm", "U5F1Tm2_Qstrm", "U1F1Wv_Qq_FR", "U2F1Wv_Q_RR", "U3F1Wv_Qq_FR", "U1F1Tm1_Qq_FR", "U2F1Tm1_Q_RR", "U3F1Tm1_Qq_FR", "U1F1Tm2_Qq_FR", "U2F1Tm2_Q_RR", "U3F1Tm2_Qq_FR", "U3F1MaT1_Si1Lv0", "U3F1MaT1_Si1Lv1", "U3F1MaT1_Si1Lv2", "U3F1MaT2_Si1Lv0", "U3F1MaT2_Si1Lv1", "U3F1MaT2_Si1Lv2", "HYPERSTATE_sorption")
-    translate.to <- c(bquote("Streamflow"~(.(strmflw.units))), "C2Wv", "C3Wv", "C4Wv", "C5Wv", expression("Atrazine"~(mu*g/l)), expression("Terbuthylazine"~(mu*g/l)), "C2Tc1", "C2Tc2", "C3Tc1", "C3Tc2", "C4Tc1", "C4Tc2", "C5Tc1", "C5Tc2", "Impervious", "Shortcut", "Drained", "SC and Drained", "Rest", "Impervious", "Shortcut", "Drained", "SC and Drained", "Rest", "Impervious", "Shortcut", "Drained", "SC and Drained", "Rest", "ImperviousFR", "ShortcutRR", "DrainedFR", "Impervious", "Shortcut", "Drainage",  "Impervious", "Shortcut", "Drainage", "Dissolved", "Fast sorbed", "Slow sorbed", "Dissolved", "Fast sorbed", "Slow sorbed", "Apparent~K[d]~(l/kg)")
+    translate.to <- c(bquote("Streamflow"~(.(strmflw.units))), "C2Wv", "C3Wv", "C4Wv", "C5Wv", expression("Atrazine"~(mu*g/l)), expression("Terbuthylazine"~(mu*g/l)), "C2Tc1", "C2Tc2", "C3Tc1", "C3Tc2", "C4Tc1", "C4Tc2", "C5Tc1", "C5Tc2", "Impervious", "Shortcut", "Drained", "SC and Drained", "Rest", "Impervious", "Shortcut", "Drained", "SC and Drained", "Rest", "Impervious", "Shortcut", "Drained", "SC and Drained", "Rest", "Impervious reservoir", "Shortcut reservoir", "Drainage reservoir", "Impervious", "Shortcut", "Drainage",  "Impervious", "Shortcut", "Drainage", "Dissolved", "Fast sorbed", "Slow sorbed", "Dissolved", "Fast sorbed", "Slow sorbed", "Apparent~K[d]~(l/kg)")
     ##translate.to <- c(expression("St. 2, Atraz."~(mu*g/l)), expression("St. 2, Terb."~(mu*g/l)), expression("St. 4, Atraz."~(mu*g/l)), expression("St. 4, Terb."~(mu*g/l)))
     ##translate.to  <- c(expression(Atraz.~(mu*g/l)), expression(Terb.~(mu*g/l)), expression(Discharge~(l/s)), expression("P"~"(mm/15min)"))
     if(is.na(c(hru.areas)[1]) & !per.area) stop("hru.areas required if per.area is FALSE")
@@ -68,7 +68,7 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         i <- 1 ## ATTENTION: this is only implemented for the lumped case, no subcatchments possible
         stp=as.numeric(gregexpr("F[0-9]+", flx.curr)[[1]]-1)
         j <- as.numeric(substr(flx.curr, start=2, stop=stp)) # get unit (HRU) of current flux
-        y.dat[y.dat$var ==flx.curr, "y"] <- y.dat[y.dat$var ==flx.curr,"y"] * sum(hru.areas[i,j])/1000/1000 # convert from micro g to g
+        y.dat[y.dat$var ==flx.curr, "y"] <- y.dat[y.dat$var ==flx.curr,"y"] * sum(hru.areas[i,j]) / timestep.fac /1000/1000 # convert from micro g to g and consider timestep.fac (has to be supplied as argument)
     }
     masses <- FALSE
     fluxes.multhru <- FALSE
@@ -92,7 +92,6 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         ## in this section of the code some assumptions are made to keep things simple: there are two tracers, the parameters of the dead levels are transformed, we get exactly the input columns (of y.dat) that we need, nothing more(?) and nothing less
         lvls <- grep("U[0-9]?F[0-9]?Wv_S", variables)
         cases <- lapply(variables[lvls], function(x) strsplit(x, split="Wv_")[[1]])
-        print(cases)
         concs1 <- lapply(cases, function(x) paste0(x[1], c("Tc1","Tc2"), "Lv1_", x[2]))
         if(twoLv){
             concs2 <- lapply(cases, function(x) paste0(x[1], c("Tc1","Tc2"), "Lv2_", x[2]))
@@ -102,16 +101,12 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         y.dat.conc <- subset(y.dat, var %in% unlist(c(concs1,concs2)) & grepl("mod", modobs))
         y.dat.conc <- spread(y.dat.conc[,c("time","var","y")], key="var", value="y")
         y.dat.conc <- y.dat.conc[,c("time",rep(unlist(concs1),2),unlist(concs2))]
-        print("conc:")
-        print(summary(y.dat.conc))
         y.dat.lvl <- subset(y.dat, var %in% variables[lvls] & grepl("mod", modobs))
         y.dat.lvl <- spread(y.dat.lvl[,c("time","var","y")], key="var", value="y")
         y.dat.lvl <- y.dat.lvl[,c(1,rep(2:ncol(y.dat.lvl),each=2))]
         reservoirs <- toupper(substr(unlist(cases)[grep("S.1",unlist(cases))], 2, 2))
         par.names.global <- rep(paste0("GloTr%CmltSl", rep(c("One_", switch(twoLv,"Two_",NULL)),each=length(cases)), reservoirs, "R"), each=2)
         par.names.local <- paste0(substr(unlist(cases)[grep("U[0-9]?",unlist(cases))], 1, 2), rep(c("T1","T2"),length(cases)), "%Sl", rep(c("One_", switch(twoLv,"Two_",NULL)),each=2*length(cases)), rep(reservoirs,each=2), "R")
-        print(par.names.global)
-        print(par.names.local)
         const.lvls <- matrix(exp(parameters[par.names.global])*exp(parameters[par.names.local]), nrow=nrow(y.dat.lvl), ncol=ifelse(twoLv,4,2)*length(lvls), byrow=TRUE) # ATTENTION: here we assume that the parameters that describe the dead volumes of the reservoirs are transformed!
         colnames(const.lvls) <- paste0(rep(unlist(lapply(cases, paste0, collapse="Wv_")),times=2), rep(c("Lv1", switch(twoLv,"Lv2",NULL)),each=2))
         y.dat.lvl <- cbind(y.dat.lvl, const.lvls)
@@ -144,7 +139,7 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
     # stack the fluxes of water or tracers that leave the Hrus on top of each other
         dd <- subset(y.dat, !grepl("C[0-9]+", var))
         sum.load <- tapply(dd$y, dd$vartrans, sum, na.rm=TRUE)
-        if(grepl("Tm[0-9]", variables)){yl <- expression("Load ("*g*"/15min)")}else{yl <- "Streamflow (l/s)"}
+        if(grepl("Tm[0-9]", variables)){yl <- expression("Load ("*g*"/h)")}else{yl <- "Streamflow (l/s)"}
         ggplot.obj <- ggplot(dd, aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=yl, fill="", caption="")#bquote(.(paste(c(rbind(dimnames(sum.load)[[1]],signif(sum.load,3))), collapse=" "))))
         nchar = length(unlist(strsplit(file, split = NULL)))
         if(write.load){
@@ -154,10 +149,11 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         width = 15
         height = 10
     }else if(masses){
-    # stack the masses of tracer in the different reservoirs on top of each other
-        yl <- expression("Mass ("*mu*g~m^{-2}*")")
-        ggplot.obj1 <- ggplot(subset(y.dat, grepl("T1", var)), aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=yl, fill="", caption=paste("Half-life:",round(half.life),"days","Sorpt. coeff.: ", round(Kd,2),"l/kg"))
-        ggplot.obj2 <- ggplot(subset(y.dat, grepl("T2", var)), aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=yl, fill="")
+    # stack the masses of tracer in dissolved, fast, and slow sorbed state on top of each other
+        yl.atra <- expression("Atrazine ("*mu*g~m^{-2}*")")
+        yl.terb <- expression("Terbuthylazine ("*mu*g~m^{-2}*")")
+        ggplot.obj1 <- ggplot(subset(y.dat, grepl("T1", var)), aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=yl.atra, fill="", caption=paste("Half-life:",round(half.life),"days, ","Sorpt. coeff.: ", round(Kd,2),"l/kg")) + scale_x_datetime(limits=as.POSIXct(c("2009-05-15","2009-07-15"))) + scale_y_continuous(expand=c(0,0))
+        ggplot.obj2 <- ggplot(subset(y.dat, grepl("T2", var)), aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=yl.terb, fill="") + scale_x_datetime(limits=as.POSIXct(c("2009-05-15","2009-07-15"))) + scale_y_continuous(expand=c(0,0))
         ggplot.obj <- gtable_rbind(ggplotGrob(ggplot.obj1), ggplotGrob(ggplot.obj2))
         dev.off()
         width = 15
@@ -175,7 +171,7 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
             all.SR <- as.numeric(tapply(y.dat2[ind,"y"], as.factor(as.numeric(y.dat2[ind,"time"])), sum))
             y.dat3 <- y.dat2[one,]
             y.dat3$y <- all.SR
-            y.dat3$var <- "All groundwater"
+            y.dat3$var <- "All groundwater\nreservoirs"
             y.dat2[one,] <- y.dat3
             y.dat2 <- y.dat2[!(ind & !one),]
         }
@@ -195,13 +191,13 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         if(sum(grepl("Tm1", variables))>0){
             dd <- subset(y.dat, grepl("Tm1", var)| grepl("All",var))
             sum.load.atra <- tapply(dd$y, dd$vartrans, sum, na.rm=TRUE)
-            ggplot.obj <- c(ggplot.obj, list(ggplotGrob(ggplot(dd, aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=expression("Load ("*g*"/15min)"), fill="", caption="")#bquote(.(paste(c(rbind(dimnames(sum.load.atra)[[1]],signif(sum.load.atra,3))), collapse=" "))~g))
+            ggplot.obj <- c(ggplot.obj, list(ggplotGrob(ggplot(dd, aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=expression("Load ("*g*"/h)"), fill="", caption="")#bquote(.(paste(c(rbind(dimnames(sum.load.atra)[[1]],signif(sum.load.atra,3))), collapse=" "))~g))
                                                                                                                          + theme_bw())))
         }
         if(sum(grepl("Tm2", variables))>0){
             dd <- subset(y.dat, grepl("Tm2", var)| grepl("All",var))
             sum.load.terb <- tapply(dd$y, dd$vartrans, sum, na.rm=TRUE)
-            ggplot.obj <- c(ggplot.obj, list(ggplotGrob(ggplot(subset(y.dat, grepl("Tm2", var) | grepl("All",var)), aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=expression("Load ("*g*"/15min)"), fill="", caption="")#paste(c(rbind(dimnames(sum.load.terb)[[1]],signif(sum.load.terb,3))), collapse=" "))
+            ggplot.obj <- c(ggplot.obj, list(ggplotGrob(ggplot(subset(y.dat, grepl("Tm2", var) | grepl("All",var)), aes(x=time, y=y, fill=vartrans)) + geom_area() + labs(x="Time", y=expression("Load ("*g*"/h)"), fill="", caption="")#paste(c(rbind(dimnames(sum.load.terb)[[1]],signif(sum.load.terb,3))), collapse=" "))
                                                                                                                                                                           + theme_bw())))
         }
         ggplot.obj <- do.call(gtable_rbind, ggplot.obj)
@@ -252,6 +248,111 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         Sys.setlocale("LC_TIME", "")
     }else{
         return(ggplot.obj)
+    }
+}
+
+plot.vague.comparison <- function(sudriv, dir.soil=NA, dir.piezo=NA){
+    dyn.load("Q:/Abteilungsprojekte/siam/ammannlo/PhD/Herbicides/Workprog/Modelling/dll/superflexdllv09u_win.dll")
+    info      <- prepare_dll(1001, writeO=TRUE)
+    ## Get modelled soil moisture
+    mod.WC  <- prepare.plot.layout(sudriv=sudriv, var.obs=c("C1Wv_Qstream"), var.mod=c("U3F1Wv_Su1")) ## dll needs to be loaded for this
+    mod.GW  <- prepare.plot.layout(sudriv=sudriv, var.obs=c("C1Wv_Qstream"), var.mod=c("U3F1Wv_Ss1")) ## dll needs to be loaded for this
+    theta.mod <- mod.WC$layout.mod$layout %>% mutate(value=mod.WC$y.mod, time=as.POSIXct(sudriv$layout$tme.orig)+time*24*60*60) %>% filter(var=="U3F1Wv_Su1") %>% select(-vary)
+    theta.mod <- theta.mod %>% mutate(value = value / exp(sudriv$model$parameters["Glo%CmltSmax_UR"]) * 0.3 + 0.1)## ATTENTION, here we assume that the parameter is log-transformed (note multiplication with porosity to get volumetric water content of soil)
+
+    ## Load soil moisture data
+    gw.mod <- mod.GW$layout.mod$layout %>% mutate(value=mod.GW$y.mod, time=as.POSIXct(sudriv$layout$tme.orig)+time*24*60*60) %>% filter(var=="U3F1Wv_Ss1") %>% select(-vary)
+    filenames.soil = list.files(paste(dir.soil, sep = ""))
+    filenames.soil = filenames.soil[grep("S[[:alnum:]]*.txt", filenames.soil)]
+    soil = list()
+    h.theta = list()
+    h.tens = list()
+    j = 1
+    for(file.curr in filenames.soil){
+        soil.name = paste(strsplit(file.curr, split = "")[[1]][1:3], collapse = "")
+        soil[[soil.name]] = read.table(paste(dir.soil, file.curr, sep = ""), header = TRUE, sep = "\t")
+        soil[[soil.name]] <- soil[[soil.name]] %>% mutate(time = as.POSIXct("2008-01-02 00:00") + julian.day*24*60*60)
+        h.theta[[soil.name]] = read.table(paste(dir.soil, "h0", j, ".txt", sep =""), header = TRUE, sep = "\t")
+        h.tens[[soil.name]] = rep(as.numeric(unlist(h.theta[[soil.name]])), each = 3)
+        h.theta[[soil.name]] = rep(as.numeric(unlist(h.theta[[soil.name]])), each = 2)
+        j = j + 1
+    }
+    ## Process Data and prepare for plotting
+    for(n in names(soil)){
+        lims.theta = c(0,1)
+        lims.tens = c(-100,1000)
+        if(n == "S02") lims.theta = c(0.1, 0.4)
+        if(n == "S04") lims.theta = c(0.1, 0.5)
+        if(n == "S03") lims.theta = c(0.1, 0.4)
+        for(i in 1:8){
+            x <- soil[[n]][,paste("theta", i, sep="")]
+            soil[[n]][x < (lims.theta[1]) | x > (lims.theta[2]), paste("theta", i, sep="")] <- NA
+        }
+        for(i in 1:12){
+            x <- soil[[n]][,paste("tens", i, sep="")]
+            soil[[n]][x < (lims.tens[1]) | x > (lims.tens[2]), paste("tens", i, sep="")] <- NA
+        }
+    }
+    ## prepare for plotting
+    s <- "S03" # S01 and S03 are the ones in the middle of the catchment, numeration is counter clockwise starting from the stream bend
+    loc <- c(1,3,5)
+    df <- data.frame(soil[[s]][,c("time", paste("theta",loc,sep=""))])
+    df.melt <- melt(df, id.vars = "time") %>% dplyr::rename(var = variable)
+    for(loc.curr in loc){
+        df.melt <- df.melt %>% mutate(var = gsub(paste0("theta",loc.curr), paste("Observed at",h.theta[[s]][loc.curr], "meters", sep = " "), var))
+    }
+
+    ## Load piezometer data
+    filenames.piezo = list.files(paste(dir.piezo, sep = ""))
+    filenames.piezo = filenames.piezo[grep(".txt", filenames.piezo)]
+    piezo = list()
+    j = 1
+    for(file.curr in filenames.piezo){
+        piezo.name = paste(strsplit(file.curr, split = "")[[1]][1:3], collapse = "")
+        piezo[[piezo.name]] = read.table(paste(dir.piezo, file.curr, sep = ""), header = TRUE, sep = "\t")
+        j = j + 1
+    }
+    piezo[[1]] <- piezo[[1]][,4:7]
+    colnames(piezo[[1]]) <- c("temp", "ec", "h", "julian.day")
+    piezo[[2]] <- piezo[[2]][,c(4,5,8)]
+    colnames(piezo[[2]]) <- c("temp", "julian.day", "h")
+    piezo[[3]] <- piezo[[3]][,4:7]
+    colnames(piezo[[3]]) <- c("temp", "ec", "h", "julian.day")
+    piezo[[4]] <- piezo[[4]][,c(4:7)]
+    colnames(piezo[[4]]) <- c("temp", "ec", "h", "julian.day")
+    piezo[[5]] <- piezo[[5]][,c(4:7)]
+    colnames(piezo[[5]]) <- c("temp", "ec", "h", "julian.day")
+    piezo[[6]] <- piezo[[6]][,c(4:7)]
+    colnames(piezo[[6]]) <- c("temp", "ec", "h", "julian.day")
+    piezo[[7]] <- piezo[[7]][,c(4:7)]
+    colnames(piezo[[7]]) <- c("temp", "ec", "h", "julian.day")
+    piezo[[8]] <- piezo[[8]][,c(4:7)]
+    colnames(piezo[[8]]) <- c("temp", "ec", "h", "julian.day")
+    piezo[[9]] <- piezo[[9]][,c(4:7)]
+    colnames(piezo[[9]]) <- c("temp", "ec", "h", "julian.day")
+    piezo[[10]] <- piezo[[10]][,c(4,5,8)]
+    colnames(piezo[[10]]) <- c("temp", "julian.day", "h")
+    piezo[[11]] <- piezo[[11]][,c(4,5,8)]
+    colnames(piezo[[11]]) <- c("temp", "julian.day", "h")
+    sel.piezo <- c("P06","P07","P08")
+    piez <- sapply(sel.piezo, function(p,piezo) cbind(piezo[[p]], p), piezo=piezo, simplify=FALSE)
+    piez <- bind_rows(piez)
+    piez <- piez %>% select(julian.day, h, p) %>% mutate(time = as.POSIXct("2008-01-01 00:00") + julian.day*24*60*60, h=h, var="Observed") %>% select(-julian.day) %>% dplyr::rename(value=h, piezometer=p)
+
+    ## Plot soil moisture data
+    df.WC <- bind_rows(df.melt, theta.mod)
+    df.WC <- df.WC %>% mutate(var = gsub("U3F1Wv_Su1", "Modelled", var))
+    p1 <- ggplot(aes(x=time, y=value, col=var), data=df.WC) + geom_point() + geom_line() + labs(x="", y="Volumetric soil water content [-]", col="") + scale_x_datetime(limits=as.POSIXct(c("2009-03-01 00:00", "2009-06-30 00:00"))) + theme_bw()##+ scale_colour_discrete(name="Depth", breaks=paste("theta",loc,sep=""), labels=paste(h.theta[[s]][loc], "meters", sep = " ")) + scale_shape_discrete(name="Depth", breaks=paste("theta",loc,sep=""), labels=paste(h.theta[[s]][loc], "meters", sep = " "))
+
+    ## Plot groundwater data
+    df.GW <- bind_rows(piez, gw.mod)
+    p1 <- ggplot(aes(x=time, y=value, col=piezometer), data=df.GW %>% filter(var=="Observed")) + geom_point(size=0.8) + geom_line() + labs(x="", y="Observed groundwater level [m]", col="Piezometer") + scale_x_datetime(limits=as.POSIXct(c("2009-03-01 00:00", "2009-06-30 00:00"))) + theme_bw()
+    p2 <- ggplot(aes(x=time, y=value, col=var), data=df.GW %>% filter(var != "Observed")) + geom_point(size=0.8) + geom_line() + labs(x="", y="Water conten of GW reservoir [mm]") + scale_x_datetime(limits=as.POSIXct(c("2009-03-01 00:00", "2009-06-30 00:00"))) + scale_colour_manual(values="black") + theme_bw() + theme(legend.position="none")
+    ggarrange(p1, p2, ncol=1, newpage=FALSE)
+    if(plot){
+        plot(p1)
+    }else{
+        return(p1)
     }
 }
 
