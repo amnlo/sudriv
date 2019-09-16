@@ -153,14 +153,14 @@ read.app.hru.areas <- function(sudriv=NA, compare.models=NA, tag.mult=NA){
         flux.atra.tot[[model.name]] = atr
         flux.terb.tot[[model.name]] = ter
 	loads.det <- list(flux.atra.tot=flux.atra.tot, flux.terb.tot=flux.terb.tot)
-        if(grepl("ference",model.name)){
+        if(model.name=="MexpH4"){
             earl <- read.table("../output/modelcomparison/tt_early_eros0wtns0.txt", header=TRUE)
             late <- read.table("../output/modelcomparison/tt_late_eros0wtns0.txt", header=TRUE)
-        }else if(grepl("M4",model.name)){
-            earl <- read.table("../output/modelcomparison/tt_early_eros0wtns0.txt", header=TRUE)
-            late <- read.table("../output/modelcomparison/tt_late_eros0wtns0.txt", header=TRUE)
+        }else if(model.name=="MprxH4"){
+            earl <- read.table("../output/modelcomparison/tt_early_proxim2.txt", header=TRUE)
+            late <- read.table("../output/modelcomparison/tt_late_proxim2.txt", header=TRUE)
         }
-        if(grepl("ference",model.name) | grepl("M4",model.name)){
+        if(model.name=="MexpH4" | model.name=="MprxH4"){
             app.hru.areas[["atra"]][[model.name]] <- c("Impervious"=earl["A1","AtraImperv"],
                                                        "Connected"=earl["A1","AtraConn"],
                                                        "Drained"=earl["A1","AtraDrng"],
