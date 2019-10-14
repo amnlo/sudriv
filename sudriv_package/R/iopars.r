@@ -156,11 +156,6 @@ read.app.hru.areas <- function(sudriv=NA, compare.models=NA, tag.mult=NA){
         if(model.name=="MexpH4"){
             earl <- read.table("../output/modelcomparison/tt_early_eros0wtns0.txt", header=TRUE)
             late <- read.table("../output/modelcomparison/tt_late_eros0wtns0.txt", header=TRUE)
-        }else if(model.name=="MprxH4"){
-            earl <- read.table("../output/modelcomparison/tt_early_proxim2.txt", header=TRUE)
-            late <- read.table("../output/modelcomparison/tt_late_proxim2.txt", header=TRUE)
-        }
-        if(model.name=="MexpH4" | model.name=="MprxH4"){
             app.hru.areas[["atra"]][[model.name]] <- c("Impervious"=earl["A1","AtraImperv"],
                                                        "Connected"=earl["A1","AtraConn"],
                                                        "Drained"=earl["A1","AtraDrng"],
@@ -175,6 +170,21 @@ read.app.hru.areas <- function(sudriv=NA, compare.models=NA, tag.mult=NA){
                                                                    "Connected"=late["A1","TerbConn"],
                                                                    "Drained"=late["A1","TerbDrng"],
                                                                    "Connected and Drained"=earl["A1","TerbConnDrng"],
+                                                                   "Unconnected"=late["A1","TerbDisconn"])
+        }else if(model.name=="MprxH4"){
+            earl <- read.table("../output/modelcomparison/tt_early_proxim2.txt", header=TRUE)
+            late <- read.table("../output/modelcomparison/tt_late_proxim2.txt", header=TRUE)
+            app.hru.areas[["atra"]][[model.name]] <- c("Impervious"=earl["A1","AtraImperv"],
+                                                       "Connected"=earl["A1","AtraNear"],
+                                                       "Drained"=earl["A1","AtraFar"],
+                                                       "Unconnected"=earl["A1","AtraDisconn"])
+            app.hru.areas[["terb"]][[model.name]][["first"]] <- c("Impervious"=earl["A1","TerbImperv"],
+                                                                  "Connected"=earl["A1","TerbNear"],
+                                                                  "Drained"=earl["A1","TerbFar"],
+                                                                  "Unconnected"=earl["A1","TerbDisconn"])
+            app.hru.areas[["terb"]][[model.name]][["second"]] <- c("Impervious"=late["A1","TerbImperv"],
+                                                                   "Connected"=late["A1","TerbNear"],
+                                                                   "Drained"=late["A1","TerbFar"],
                                                                    "Unconnected"=late["A1","TerbDisconn"])
         }else{
             app.hru.areas[["atra"]][[model.name]] <- NA
