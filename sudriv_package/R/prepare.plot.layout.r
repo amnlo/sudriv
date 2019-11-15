@@ -1,7 +1,9 @@
 prepare.plot.layout <- function(sudriv, var.obs, var.mod=c(), vary=list()){
     ## This function prepares the layout of the observed and modelled variables (var.obs) and the modelled variables (var.mod)
     precip=FALSE
+    timedep=FALSE
     if("P" %in% var.obs){var.obs <- var.obs[var.obs != "P"]; precip=TRUE}
+    if("timedep" %in% var.obs){var.obs <- var.obs[var.obs != "timedep"]; timedep=TRUE}
     if(!all(var.obs %in% unique(sudriv$layout$layout$var))) stop("strange var.obs supplied")
     su.plot <- sudriv
     nq <- nrow(su.plot$layout$layout)
@@ -51,8 +53,18 @@ prepare.plot.layout <- function(sudriv, var.obs, var.mod=c(), vary=list()){
     if(precip){
         layout.obs <- data.frame(var="P", time=sudriv$input$inputobs[,1]/24)
         layout.obs <- rbind(su.plot$layout$layout,layout.obs)
-	y.obs <- c(y.obs, su$input$inputobs[,2])
-    }else{
+    	y.obs <- c(y.obs, sudriv$input$inputobs[,2])
+    }
+    if(timedep){
+        if(precip){
+            lay.pre <- layout.obs
+        }else{
+            lay.pre <- su.plot$layout$layout
+        }
+        layout.obs <- rbind(lay.pre,data.frame(var="timedep", time=sudriv$input$inputobs[,1]/24))
+        y.obs <- c(y.obs, sudriv$model$timedep$par[,1]) ## ATTENTION: the current time course stored in the su object is chosen (assuming that this was updated with some optimal time-course)
+    }
+    if(!precip & !timedep){
         layout.obs <- su.plot$layout$layout
     }
     vary2 <- vary
