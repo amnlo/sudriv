@@ -62,7 +62,9 @@ prepare.plot.layout <- function(sudriv, var.obs, var.mod=c(), vary=list()){
             lay.pre <- su.plot$layout$layout
         }
         layout.obs <- rbind(lay.pre,data.frame(var="timedep", time=sudriv$input$inputobs[,1]/24))
-        y.obs <- c(y.obs, sudriv$model$timedep$par[,1]) ## ATTENTION: the current time course stored in the su object is chosen (assuming that this was updated with some optimal time-course)
+        td <- sudriv$model$timedep$par[,1]
+        if(sudriv$model$args$parTran[which(sudriv$model$timedep$pTimedep)[1]]==1) td <- exp(td)
+        y.obs <- c(y.obs, td) ## ATTENTION: the current time course stored in the su object is chosen (assuming that this was updated with some optimal time-course)
     }
     if(!precip & !timedep){
         layout.obs <- su.plot$layout$layout
