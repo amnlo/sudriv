@@ -1,6 +1,6 @@
 ## This script contains functions to plot the model results and compare them to the observations
 
-plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list(), variables=NA, extend.to=NA, plot=TRUE, file=NA, scales=c("free","fixed","free_x","free_y"), xlim=NULL, ylim=NULL, per.area=TRUE, hru.areas=NA, distributed=FALSE, parameters=NA, write.load=FALSE, timestep.fac=1, translate.var=NA, translate.to=NA){
+plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list(), variables=NA, extend.to=NA, plot=TRUE, file=NA, scales=c("free","fixed","free_x","free_y"), xlim=NULL, ylim=NULL, per.area=TRUE, hru.areas=NA, distributed=FALSE, parameters=NA, write.load=FALSE, timestep.fac=1, translate.var=NA, translate.to=NA, pri.samp=NULL, tdpar=NULL){
     library(scales)
     ## gg_color_hue <- function(n) {
     ##     hues = seq(15, 375, length = n + 1)
@@ -138,6 +138,7 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
     height = 3*length(variables)
     ## limit the data plotted to the specified region
     if(!is.null(xlim)) y.dat <- subset(y.dat, time >= xlim[1] & time <= xlim[2])
+    mult <- FALSE # is it the "mult" plot type that could potentially contain a timedep. parameter? (needed to plot the prior around the timedep param)
     if(sum(grepl("F[0-9].*Qstrm", variables)) > 0){
     # stack the fluxes of water or tracers that leave the Hrus on top of each other
         dd <- subset(y.dat, !grepl("C[0-9]+", var))
@@ -205,10 +206,22 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         }
         ggplot.obj <- do.call(gtable_rbind, ggplot.obj)
     }else{
-        ggplot.obj <- ggplot(y.dat, aes(x=time, y=y, shape=modobs, col=modobs)) + scale_x_datetime(limits=xlim) + scale_y_continuous(limits=ylim)
-        ggplot.obj <- ggplot.obj + geom_point(data=subset(y.dat, modobs=="obs" & var!="P"), size=1.8) + geom_line(data=subset(y.dat, modobs!="obs" & var!="P"), size=0.8)+ theme_bw(base_size=20) + theme(title=element_text(size=14), axis.text.x=element_text(size=20))
-        if("P" %in% y.dat$var) ggplot.obj <- ggplot.obj + geom_col(data=subset(y.dat, var=="P")) + theme(legend.position="none")
-        ggplot.obj <- ggplot.obj + labs(x="", y="", shape="", col="", title=names(vary)[1]) + facet_wrap(~vartrans, nrow=length(variables), scales=scales, labeller=label_parsed, strip.position="left")
+        mult <- TRUE
+        gglist <- list()
+        for(vr.curr in unique(y.dat$var)){ #create list of ggplots
+            dat.curr <- subset(y.dat, var==vr.curr)
+            ggplot.obj <- ggplot(dat.curr, aes(x=time, y=y)) + scale_x_datetime(limits=xlim) + scale_y_continuous(limits=ylim) + labs(x="", y=parse(text=as.character(dat.curr$vartrans[1])), shape="", col="", title=names(vary)[1])
+            if(vr.curr=="P"){
+                ggplot.obj <- ggplot.obj + geom_col(aes(col=modobs), data=dat.curr) + theme_bw() + theme(legend.position="none", axis.title.x=element_blank())
+            }else{
+                ggplot.obj <- ggplot.obj + geom_point(aes(shape=modobs, col=modobs), data=subset(dat.curr, modobs=="obs"), size=1.8) + geom_line(aes(col=modobs), data=subset(dat.curr, modobs!="obs"), size=0.8)+ theme_bw() + theme(axis.title.x=element_blank())
+            }
+            if(vr.curr == "timedep"){
+                if(!is.null(pri.samp)) ggplot.obj <- ggplot.obj + geom_abline(slope=0, intercept=mean(pri.samp)) + geom_ribbon(aes(ymin=mean(pri.samp)-sd(pri.samp), ymax=mean(pri.samp)+sd(pri.samp), alpha=0.8)) + theme(legend.position="none") + labs(y=ifelse(is.null(tdpar),"tdpar",tdpar))
+            }    
+            gglist <- c(gglist, list(ggplot.obj))
+        }
+        out <- egg::ggarrange(plots=gglist, nrow=length(gglist), padding=unit(0.1,"line"))
     }
     ## ggplot.obj <- ggplot() + scale_x_datetime(limits=xlim, labels=date_format("%d.%m %H:%M")) + scale_y_continuous(limits=ylim)
     ## ggplot.obj <- ggplot.obj + geom_line(aes(x=time, y=y, group=var.ext, col=var.ext, linetype=var.ext), data=y.dat, size=1.8)+ theme_bw(base_size=26) + theme(axis.text.x=element_text(size=16))## + theme(legend.position="none")
@@ -234,19 +247,23 @@ plot.results <- function(layout.mod, y.mod, layout.obs=NULL, y.obs=NA, vary=list
         }else{
             nchar = length(unlist(strsplit(file, split = NULL)))
             pat = substr(file, nchar-2, nchar)
-            if(pat == "pdf"){
-                pdf(file, width = width, height = height)
-            }else if(pat == "peg" | pat == "jpg"){
-                jpeg(file, res = 400, units = "in", width = width, height = height)
-            }else if(pat == "png"){
-                png(file, res = 400, units = "in", width = width, height = height)
-            }else stop("file type not recognized")
-            if(masses){
-                grid.arrange(ggplot.obj)
+            if(mult){
+                ggsave(file, plot=out)
             }else{
-                plot(ggplot.obj)
+                if(pat == "pdf"){
+                    pdf(file, width = width, height = height)
+                }else if(pat == "peg" | pat == "jpg"){
+                    jpeg(file, res = 400, units = "in", width = width, height = height)
+                }else if(pat == "png"){
+                    png(file, res = 400, units = "in", width = width, height = height)
+                }else stop("file type not recognized")
+                if(masses){
+                    grid.arrange(ggplot.obj)
+                }else{
+                    plot(ggplot.obj)
+                }
+                dev.off()
             }
-            dev.off()
         }
         Sys.setlocale("LC_TIME", "")
     }else{
