@@ -1,4 +1,4 @@
-run.model <- function(layout, sudriv, lump=TRUE){ ## par and layout are just dummy arguments to keep the function compatible with the general structure of the calling likelihood function. They are not used. Instead, the parameters and layout are taken from the sudriv object.
+run.model <- function(layout, sudriv, lump=TRUE){
     res.sup <- run.engine(sudriv)
     var <- unique(layout$layout[,1])
     outnames <- sudriv$model$outnames
